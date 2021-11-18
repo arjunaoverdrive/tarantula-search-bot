@@ -7,19 +7,28 @@ import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import util.DbSessionSetup;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.RecursiveAction;
+import java.util.stream.Collectors;
 
 
 public class WebPageVisitor extends RecursiveAction {
     private final Node node;
     private static final Logger LOGGER = Logger.getLogger(WebPageVisitor.class);
-    private static final int BUFFER_SIZE = 200;
-    private final static Set<Page> pages = new HashSet<>();
-    private final static Set<String> pathSet = new HashSet<>();
+
+    private static final String USER_AGENT = "TarantulaSearchBot (Windows; U; WindowsNT 5.1; en-US; rvl.8.1.6)" +
+            "Gecko/20070725 Firefox/2.0.0.6";
+    private static final int BUFFER_SIZE = 100;
+
+    private final static Set<Page> PAGES = new HashSet<>();
+    private final static Set<String> PATH_SET = Collections.synchronizedSet(new HashSet<>());
+
+    private static int count = 0;
 
     public WebPageVisitor(Node node) {
         this.node = node;
@@ -27,8 +36,8 @@ public class WebPageVisitor extends RecursiveAction {
 
     @Override
     protected void compute() {
-        List<Node> childNodes = node.getChildrenNodes();
-        if (childNodes == null) {
+        List<Node> childrenNodes = getChildrenNodes(node);
+        if (childrenNodes == null || childrenNodes.size() == 0) {
             return;
         }
         try {
@@ -37,20 +46,20 @@ public class WebPageVisitor extends RecursiveAction {
             LOGGER.error(e.getStackTrace());
         }
         List<WebPageVisitor> subActions = new ArrayList<>();
-        for (Node child : childNodes) {
-            if (node.addChild(child)) {
-                Page page = createPageObject(child.getConnection());
-                if (pathSet.add(page.getPath())) {
-                    pages.add(page);
+        for (Node child : childrenNodes) {
+            if (child.isUnique()) {
+                Page page = createPageObject(getConnection(child.getPath()));
+                if (PATH_SET.add(page.getPath())) {
+                    PAGES.add(page);
                 }
-                if (pages.size() >= BUFFER_SIZE) {
-                    Set<Page> pageSet = new HashSet<>(pages);
-                    pages.clear();
+                if (PAGES.size() >= BUFFER_SIZE) {
+                    Set<Page> pageSet = new HashSet<>(PAGES);
+                    PAGES.clear();
                     doWrite(pageSet);
                 }
-                WebPageVisitor task = new WebPageVisitor(child);
-                task.fork();
-                subActions.add(task);
+                WebPageVisitor action = new WebPageVisitor(child);
+                action.fork();
+                subActions.add(action);
             }
         }
         for (WebPageVisitor action : subActions) {
@@ -58,12 +67,45 @@ public class WebPageVisitor extends RecursiveAction {
         }
     }
 
+    private Connection getConnection(String path) {
+        return Jsoup.connect(path).userAgent(USER_AGENT).referrer("http://www.google.com");
+    }
+
     void saveRootPage() {
-        Page rootPage = createPageObject(this.node.getConnection());
-        Set<Page> rootList = new HashSet<>();
-        rootList.add(rootPage);
-        pathSet.add(this.node.getPath());
-        doWrite(rootList);
+        Page rootPage = createPageObject(getConnection(Main.DOMAIN));
+        Set<Page> rootSet = new HashSet<>();
+        rootSet.add(rootPage);
+        PATH_SET.add(Main.DOMAIN);
+        doWrite(rootSet);
+    }
+
+    private List<Node> getChildrenNodes(Node node) {
+        Connection connection = getConnection(node.getPath());
+        List<Node> childrenNodes = new ArrayList<>();
+        Document doc = null;
+        try {
+            doc = connection.get();
+        } catch (IOException e) {
+            LOGGER.error(e);
+        }
+        List<String> links = getPathsListFromDocument(doc);
+        for (String childLink : links) {
+                Node child = new Node(childLink);
+                childrenNodes.add(child);
+        }
+        return childrenNodes;
+    }
+
+    private List<String> getPathsListFromDocument(Document doc) {
+        return  doc.select("a[href]").stream()
+                .map(e -> e.attr("abs:href"))
+                .distinct()
+                .filter(s -> !PATH_SET.contains(s))
+                .filter(s -> s.matches(Main.DOMAIN + "(/)?.+"))
+                .filter(s -> !s.contains("#"))
+                .filter(s -> !s.matches(".+\\.\\w+"))
+                .filter(s -> !s.matches(".+login\\?.*"))
+                .collect(Collectors.toList());
     }
 
     private Page createPageObject(Connection connection) {
@@ -82,22 +124,27 @@ public class WebPageVisitor extends RecursiveAction {
             LOGGER.info("Page with empty content " + path);
             return page;
         } catch (IOException e) {
-            LOGGER.error(e.getStackTrace());
+            page.setPath(connection.request().url().getPath());
+            page.setCode(500);
+            LOGGER.error(e);
+            return page;
         }
         return page;
     }
 
-    static void doWrite(Set<Page> pages) {
+    private static void doWrite(Set<Page> pages) {
         SessionFactory sessionFactory = DbSessionSetup.getSessionSetup();
         Session session = sessionFactory.openSession();
         Transaction transaction = session.beginTransaction();
         pages.stream().peek(System.out::println).forEach(session::save);
         transaction.commit();
-        LOGGER.info("Successfully saved " + pages.size() + " pages");
+        count += pages.size();
+        LOGGER.info("Successfully saved " + pages.size() + " pages; count " + count);
+        session.close();
     }
 
-    static void flushBufferToDb() {
-        doWrite(new HashSet<>(pages));
+    void flushBufferToDb() {
+        doWrite(new HashSet<>(PAGES));
         DbSessionSetup.getSessionSetup().close();
     }
 }

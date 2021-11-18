@@ -3,7 +3,7 @@ package pagevisitor;
 import java.util.concurrent.ForkJoinPool;
 
 public class Main {
-    public static final String DOMAIN = "https://ipfran.ru/";
+    public static final String DOMAIN = "https://volochek.life/";
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -13,7 +13,7 @@ public class Main {
             visitor.saveRootPage();
             ForkJoinPool fjp = new ForkJoinPool();
             fjp.invoke(visitor);
-            WebPageVisitor.flushBufferToDb();
+            visitor.flushBufferToDb();
             System.out.println("Took " + (System.currentTimeMillis() - start));
         } catch (Exception e) {
             e.printStackTrace();

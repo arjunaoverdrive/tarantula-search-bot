@@ -11,8 +11,8 @@ public class Page {
     private Integer id;
     @Column(nullable = false, length = 65535, unique = true)
     private String path;
-    @Column(length = 16777215 )
     private int code;
+    @Column(length = 16777215 )
     private String content;
 
     public Page() {
@@ -63,5 +63,13 @@ public class Page {
     @Override
     public int hashCode() {
         return Objects.hash(getPath());
+    }
+
+    @Override
+    public String toString() {
+        return "Page{" +
+                "path='" + path + '\'' +
+                ", code=" + code +
+                '}';
     }
 }
