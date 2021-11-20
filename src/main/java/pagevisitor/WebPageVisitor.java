@@ -26,7 +26,7 @@ public class WebPageVisitor extends RecursiveAction {
     private static final int BUFFER_SIZE = 100;
 
     private final static Set<Page> PAGES = new HashSet<>();
-    private final static Set<String> PATH_SET = Collections.synchronizedSet(new HashSet<>());
+    private final static Map<String, Set<String>> PATH_SET = new HashMap<>();
 
     private static int count = 0;
 
@@ -49,7 +49,7 @@ public class WebPageVisitor extends RecursiveAction {
         for (Node child : childrenNodes) {
             if (child.isUnique()) {
                 Page page = createPageObject(getConnection(child.getPath()));
-                if (PATH_SET.add(page.getPath())) {
+                if (PATH_SET.get(Main.DOMAIN).add(page.getPath())) {
                     PAGES.add(page);
                 }
                 if (PAGES.size() >= BUFFER_SIZE) {
@@ -69,14 +69,6 @@ public class WebPageVisitor extends RecursiveAction {
 
     private Connection getConnection(String path) {
         return Jsoup.connect(path).userAgent(USER_AGENT).referrer("http://www.google.com");
-    }
-
-    void saveRootPage() {
-        Page rootPage = createPageObject(getConnection(Main.DOMAIN));
-        Set<Page> rootSet = new HashSet<>();
-        rootSet.add(rootPage);
-        PATH_SET.add(Main.DOMAIN);
-        doWrite(rootSet);
     }
 
     private List<Node> getChildrenNodes(Node node) {
@@ -100,7 +92,6 @@ public class WebPageVisitor extends RecursiveAction {
         return  doc.select("a[href]").stream()
                 .map(e -> e.attr("abs:href"))
                 .distinct()
-                .filter(s -> !PATH_SET.contains(s))
                 .filter(s -> s.matches(Main.DOMAIN + "(/)?.+"))
                 .filter(s -> !s.contains("#"))
                 .filter(s -> !s.matches(".+\\.\\w+"))
@@ -121,15 +112,25 @@ public class WebPageVisitor extends RecursiveAction {
             String path = hse.getUrl().substring(Main.DOMAIN.length() - 1);
             page.setCode(hse.getStatusCode());
             page.setPath(path);
-            LOGGER.info("Page with empty content " + path);
+            LOGGER.warn(Thread.currentThread().getId() + " Page with empty content " + path);
             return page;
         } catch (IOException e) {
             page.setPath(connection.request().url().getPath());
-            page.setCode(500);
-            LOGGER.error(e);
+            page.setCode(400);
+            LOGGER.warn(e);
             return page;
         }
         return page;
+    }
+
+    void saveRootPage() {
+        Page rootPage = createPageObject(getConnection(Main.DOMAIN));
+        Set<Page> rootSet = new HashSet<>();
+        rootSet.add(rootPage);
+        Set<String>rootStringSet = new HashSet<>();
+        rootStringSet.add("/");
+        PATH_SET.put(Main.DOMAIN, rootStringSet);
+        doWrite(rootSet);
     }
 
     private static void doWrite(Set<Page> pages) {

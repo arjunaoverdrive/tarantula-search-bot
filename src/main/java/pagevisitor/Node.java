@@ -2,6 +2,7 @@ package pagevisitor;
 
 import java.util.*;
 
+
 public class Node {
     private final String path;
     private final static Set<String> UNIQUE_PATHS = new HashSet<>();
@@ -10,7 +11,7 @@ public class Node {
         this.path = path;
     }
 
-    boolean isUnique() {
+     boolean isUnique() {
         return UNIQUE_PATHS.add(this.getPath());
     }
 

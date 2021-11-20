@@ -11,6 +11,7 @@ public class Page {
     private Integer id;
     @Column(nullable = false, length = 65535, unique = true)
     private String path;
+    @Column(nullable = false)
     private int code;
     @Column(length = 16777215 )
     private String content;
@@ -57,12 +58,12 @@ public class Page {
         if (this == o) return true;
         if (!(o instanceof Page)) return false;
         Page page = (Page) o;
-        return getPath().equals(page.getPath());
+        return getCode() == page.getCode() && getPath().equals(page.getPath()) && Objects.equals(getContent(), page.getContent());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPath());
+        return Objects.hash(getPath(), getCode(), getContent());
     }
 
     @Override
