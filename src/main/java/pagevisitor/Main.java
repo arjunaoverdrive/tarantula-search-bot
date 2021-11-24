@@ -3,7 +3,7 @@ package pagevisitor;
 import java.util.concurrent.ForkJoinPool;
 
 public class Main {
-    public static final String DOMAIN = "https://volochek.life/";
+    public static final String DOMAIN = "https://www.svetlovka.ru/";
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();

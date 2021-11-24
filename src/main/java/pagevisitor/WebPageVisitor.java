@@ -27,8 +27,6 @@ public class WebPageVisitor extends RecursiveAction {
             "Gecko/20070725 Firefox/2.0.0.6";
     private static final int BUFFER_SIZE = 100;
 
-    private final static Set<Page> PAGES = new HashSet<>();
-
     private static int count = 0;
 
     public WebPageVisitor(Node node, URLsStorage storage) {
@@ -50,12 +48,12 @@ public class WebPageVisitor extends RecursiveAction {
         List<WebPageVisitor> subActions = new ArrayList<>();
         for (Node child : childrenNodes) {
             Page page = createPageObject(getConnection(child.getPath()));
-            if (storage.addPage2save(page.getPath())) {
-                PAGES.add(page);
+            if (storage.addPageURL(page.getPath())) {
+                storage.addPage2Buffer(page);
             }
-            if (PAGES.size() >= BUFFER_SIZE) {
-                Set<Page> pageSet = new HashSet<>(PAGES);
-                PAGES.clear();
+            if (storage.getBuffer().size() >= BUFFER_SIZE) {
+                Set<Page> pageSet = new HashSet<>(storage.getBuffer());
+                storage.clearBuffer();
                 doWrite(pageSet);
             }
             WebPageVisitor action = new WebPageVisitor(child, storage);
@@ -130,7 +128,7 @@ public class WebPageVisitor extends RecursiveAction {
         Page rootPage = createPageObject(getConnection(Main.DOMAIN));
         Set<Page> rootPageSet = new HashSet<>();
         rootPageSet.add(rootPage);
-        storage.addPage2save(Main.DOMAIN);
+        storage.addPageURL(Main.DOMAIN);
         doWrite(rootPageSet);
     }
 
@@ -146,7 +144,7 @@ public class WebPageVisitor extends RecursiveAction {
     }
 
     void flushBufferToDb() {
-        doWrite(new HashSet<>(PAGES));
+        doWrite(storage.getBuffer());
         DbSessionSetup.getSessionSetup().close();
     }
 }

@@ -1,5 +1,7 @@
 package pagevisitor;
 
+import model.Page;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -8,9 +10,11 @@ public class URLsStorage {
     private final String root;
     private final Set<String> children;
     private final Set<String> savedPagedPaths;
+    private final Set<Page> buffer;
 
     public URLsStorage(String root) {
         this.root = root;
+        this.buffer = new HashSet<>();
         this.children = new HashSet<>();
         this.savedPagedPaths = new HashSet<>();
     }
@@ -19,9 +23,21 @@ public class URLsStorage {
         return children.add(path);
     }
 
-    public boolean addPage2save(String path){
+    public boolean addPageURL(String path){
         return savedPagedPaths.add(path);
     }
+
+    public void addPage2Buffer(Page page){
+        buffer.add(page);
+    }
+
+    public Set<Page> getBuffer() {
+        return buffer;
+    }
+    public void clearBuffer(){
+        buffer.clear();
+    }
+
 
     @Override
     public boolean equals(Object o) {
