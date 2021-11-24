@@ -3,13 +3,14 @@ package pagevisitor;
 import java.util.concurrent.ForkJoinPool;
 
 public class Main {
-    public static final String DOMAIN = "https://www.svetlovka.ru/";
+    public static final String DOMAIN = "https://volochek.life/";
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
         try {
             Node root = new Node(DOMAIN);
-            WebPageVisitor visitor = new WebPageVisitor(root);
+            URLsStorage storage = new URLsStorage(DOMAIN);
+            WebPageVisitor visitor = new WebPageVisitor(root, storage);
             visitor.saveRootPage();
             ForkJoinPool fjp = new ForkJoinPool();
             fjp.invoke(visitor);
@@ -19,6 +20,4 @@ public class Main {
             e.printStackTrace();
         }
     }
-
-
 }

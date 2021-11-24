@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 
 public class WebPageVisitor extends RecursiveAction {
     private final Node node;
+    private final URLsStorage storage;
+
     private static final Logger LOGGER = Logger.getLogger(WebPageVisitor.class);
 
     private static final String USER_AGENT = "TarantulaSearchBot (Windows; U; WindowsNT 5.1; en-US; rvl.8.1.6)" +
@@ -26,17 +28,17 @@ public class WebPageVisitor extends RecursiveAction {
     private static final int BUFFER_SIZE = 100;
 
     private final static Set<Page> PAGES = new HashSet<>();
-    private final static Map<String, Set<String>> PATH_SET = new HashMap<>();
 
     private static int count = 0;
 
-    public WebPageVisitor(Node node) {
+    public WebPageVisitor(Node node, URLsStorage storage) {
         this.node = node;
+        this.storage = storage;
     }
 
     @Override
     protected void compute() {
-        List<Node> childrenNodes = getChildrenNodes(node);
+        Set<Node> childrenNodes = getChildrenNodes(node);
         if (childrenNodes == null || childrenNodes.size() == 0) {
             return;
         }
@@ -47,33 +49,32 @@ public class WebPageVisitor extends RecursiveAction {
         }
         List<WebPageVisitor> subActions = new ArrayList<>();
         for (Node child : childrenNodes) {
-            if (child.isUnique()) {
-                Page page = createPageObject(getConnection(child.getPath()));
-                if (PATH_SET.get(Main.DOMAIN).add(page.getPath())) {
-                    PAGES.add(page);
-                }
-                if (PAGES.size() >= BUFFER_SIZE) {
-                    Set<Page> pageSet = new HashSet<>(PAGES);
-                    PAGES.clear();
-                    doWrite(pageSet);
-                }
-                WebPageVisitor action = new WebPageVisitor(child);
-                action.fork();
-                subActions.add(action);
+            Page page = createPageObject(getConnection(child.getPath()));
+            if (storage.addPage2save(page.getPath())) {
+                PAGES.add(page);
             }
+            if (PAGES.size() >= BUFFER_SIZE) {
+                Set<Page> pageSet = new HashSet<>(PAGES);
+                PAGES.clear();
+                doWrite(pageSet);
+            }
+            WebPageVisitor action = new WebPageVisitor(child, storage);
+            action.fork();
+            subActions.add(action);
         }
         for (WebPageVisitor action : subActions) {
             action.quietlyJoin();
         }
+
     }
 
     private Connection getConnection(String path) {
         return Jsoup.connect(path).userAgent(USER_AGENT).referrer("http://www.google.com");
     }
 
-    private List<Node> getChildrenNodes(Node node) {
+    private Set<Node> getChildrenNodes(Node node) {
         Connection connection = getConnection(node.getPath());
-        List<Node> childrenNodes = new ArrayList<>();
+        Set<Node> childrenNodes = new HashSet<>();
         Document doc = null;
         try {
             doc = connection.get();
@@ -82,14 +83,16 @@ public class WebPageVisitor extends RecursiveAction {
         }
         List<String> links = getPathsListFromDocument(doc);
         for (String childLink : links) {
+            if (storage.addPath(childLink)) {
                 Node child = new Node(childLink);
                 childrenNodes.add(child);
+            }
         }
         return childrenNodes;
     }
 
     private List<String> getPathsListFromDocument(Document doc) {
-        return  doc.select("a[href]").stream()
+        return doc.select("a[href]").stream()
                 .map(e -> e.attr("abs:href"))
                 .distinct()
                 .filter(s -> s.matches(Main.DOMAIN + "(/)?.+"))
@@ -125,19 +128,17 @@ public class WebPageVisitor extends RecursiveAction {
 
     void saveRootPage() {
         Page rootPage = createPageObject(getConnection(Main.DOMAIN));
-        Set<Page> rootSet = new HashSet<>();
-        rootSet.add(rootPage);
-        Set<String>rootStringSet = new HashSet<>();
-        rootStringSet.add("/");
-        PATH_SET.put(Main.DOMAIN, rootStringSet);
-        doWrite(rootSet);
+        Set<Page> rootPageSet = new HashSet<>();
+        rootPageSet.add(rootPage);
+        storage.addPage2save(Main.DOMAIN);
+        doWrite(rootPageSet);
     }
 
     private static void doWrite(Set<Page> pages) {
         SessionFactory sessionFactory = DbSessionSetup.getSessionSetup();
         Session session = sessionFactory.openSession();
         Transaction transaction = session.beginTransaction();
-        pages.stream().peek(System.out::println).forEach(session::save);
+        pages.forEach(session::save);
         transaction.commit();
         count += pages.size();
         LOGGER.info("Successfully saved " + pages.size() + " pages; count " + count);
