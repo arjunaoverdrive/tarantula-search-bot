@@ -20,6 +20,8 @@
         <property name="hbm2ddl.auto">update</property>
 
         <mapping class="model.Page"></mapping>
+        <mapping class="model.Lemma"></mapping>
+        <mapping class="model.Index"></mapping>
 
     </session-factory>
 </hibernate-configuration>

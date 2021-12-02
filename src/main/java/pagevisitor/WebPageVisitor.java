@@ -1,25 +1,20 @@
 package pagevisitor;
 
+import lemmatizer.LemmaHelper;
+
 import model.Page;
 import org.apache.log4j.Logger;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import util.DbSessionSetup;
-
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.RecursiveAction;
-import java.util.stream.Collectors;
-
 
 public class WebPageVisitor extends RecursiveAction {
     private final Node node;
     private final URLsStorage storage;
+    private final LemmaHelper lemmaStorage;
 
     private static final Logger LOGGER = Logger.getLogger(WebPageVisitor.class);
 
@@ -27,16 +22,16 @@ public class WebPageVisitor extends RecursiveAction {
             "Gecko/20070725 Firefox/2.0.0.6";
     private static final int BUFFER_SIZE = 100;
 
-    private static int count = 0;
-
-    public WebPageVisitor(Node node, URLsStorage storage) {
+    public WebPageVisitor(Node node, URLsStorage storage, LemmaHelper lemmaStorage) {
         this.node = node;
         this.storage = storage;
+        this.lemmaStorage = lemmaStorage;
     }
 
     @Override
     protected void compute() {
-        Set<Node> childrenNodes = getChildrenNodes(node);
+        Connection connection = getConnection(node.getPath());
+        Set<Node> childrenNodes = node.getChildrenNodes(connection, storage);
         if (childrenNodes == null || childrenNodes.size() == 0) {
             return;
         }
@@ -45,106 +40,86 @@ public class WebPageVisitor extends RecursiveAction {
         } catch (InterruptedException e) {
             LOGGER.error(e.getStackTrace());
         }
-        List<WebPageVisitor> subActions = new ArrayList<>();
+        List<WebPageVisitor> subActions = new LinkedList<>();
         for (Node child : childrenNodes) {
-            Page page = createPageObject(getConnection(child.getPath()));
-            if (storage.addPageURL(page.getPath())) {
-                storage.addPage2Buffer(page);
-            }
-            if (storage.getBuffer().size() >= BUFFER_SIZE) {
-                Set<Page> pageSet = new HashSet<>(storage.getBuffer());
-                storage.clearBuffer();
-                doWrite(pageSet);
-            }
-            WebPageVisitor action = new WebPageVisitor(child, storage);
+            saveChildPageToStorage(child);
+            WebPageVisitor action = new WebPageVisitor(child, storage, lemmaStorage);
             action.fork();
             subActions.add(action);
         }
         for (WebPageVisitor action : subActions) {
             action.quietlyJoin();
         }
+    }
 
+    private void saveChildPageToStorage(Node node){
+        Page page = createPageObject(getConnection(node.getPath()));
+        if (storage.addPageURL(page.getPath())) {
+            storage.addPage2Buffer(page);
+            saveLemmasFromPage(page);
+        }
+        if (storage.getBuffer().size() >= BUFFER_SIZE) {
+            storage.doWrite();
+        }
+    }
+
+    private void saveLemmasFromPage(Page page){
+        if(page.getCode() == 200) {
+            try {
+                lemmaStorage.addLemmasToStorage(page);
+            } catch (IOException e) {
+                LOGGER.warn(e);
+            }
+        }
     }
 
     private Connection getConnection(String path) {
         return Jsoup.connect(path).userAgent(USER_AGENT).referrer("http://www.google.com");
     }
 
-    private Set<Node> getChildrenNodes(Node node) {
-        Connection connection = getConnection(node.getPath());
-        Set<Node> childrenNodes = new HashSet<>();
-        Document doc = null;
-        try {
-            doc = connection.get();
-        } catch (IOException e) {
-            LOGGER.error(e);
-        }
-        List<String> links = getPathsListFromDocument(doc);
-        for (String childLink : links) {
-            if (storage.addPath(childLink)) {
-                Node child = new Node(childLink);
-                childrenNodes.add(child);
-            }
-        }
-        return childrenNodes;
-    }
-
-    private List<String> getPathsListFromDocument(Document doc) {
-        return doc.select("a[href]").stream()
-                .map(e -> e.attr("abs:href"))
-                .distinct()
-                .filter(s -> s.matches(Main.DOMAIN + "(/)?.+"))
-                .filter(s -> !s.contains("#"))
-                .filter(s -> !s.matches(".+\\.\\w+"))
-                .filter(s -> !s.matches(".+login\\?.*"))
-                .collect(Collectors.toList());
-    }
-
-    private Page createPageObject(Connection connection) {
-        Page page = new Page();
+     Page createPageObject(Connection connection) {
+        Page page;
         Connection.Response response = null;
         try {
             response = connection.execute();
             int statusCode = response.statusCode();
-            page.setCode(statusCode);
-            page.setPath(response.url().getPath());
-            page.setContent(response.body());
+            page = new Page(response.url().getPath(), statusCode, response.body());
         } catch (HttpStatusException hse) {
             String path = hse.getUrl().substring(Main.DOMAIN.length() - 1);
-            page.setCode(hse.getStatusCode());
-            page.setPath(path);
+            page = new Page(path, hse.getStatusCode(), null);
             LOGGER.warn(Thread.currentThread().getId() + " Page with empty content " + path);
             return page;
         } catch (IOException e) {
-            page.setPath(connection.request().url().getPath());
-            page.setCode(400);
+            page = new Page(connection.request().url().getPath(), 400, null);
             LOGGER.warn(e);
             return page;
         }
         return page;
     }
 
-    void saveRootPage() {
-        Page rootPage = createPageObject(getConnection(Main.DOMAIN));
-        Set<Page> rootPageSet = new HashSet<>();
-        rootPageSet.add(rootPage);
+    void saveRootPage() throws IOException {
+        Connection connection = getConnection(Main.DOMAIN);
+        Page rootPage = createPageObject(connection);
         storage.addPageURL(Main.DOMAIN);
-        doWrite(rootPageSet);
+        storage.addPage2Buffer(rootPage);
+        storage.doWrite();
+        lemmaStorage.addLemmasToStorage(rootPage);
+
+//        try {
+//            List<Element> titleElements = getElements(connection, "title");
+//            List<String> textFromTitleElements = getTextFromElements(titleElements);
+//            List<Element> bodyElements = getElements(connection, "body");
+//            List<String> textFromBodyElements = getTextFromElements(bodyElements);
+//            textFromTitleElements.forEach(System.out::println);
+//            System.out.println(titleElements.size() + " elements in title");
+//            textFromBodyElements.forEach(System.out::println);
+//
+//            System.out.println(bodyElements.size() + " elements in body");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
-    private static void doWrite(Set<Page> pages) {
-        SessionFactory sessionFactory = DbSessionSetup.getSessionSetup();
-        Session session = sessionFactory.openSession();
-        Transaction transaction = session.beginTransaction();
-        pages.forEach(session::save);
-        transaction.commit();
-        count += pages.size();
-        LOGGER.info("Successfully saved " + pages.size() + " pages; count " + count);
-        session.close();
-    }
 
-    void flushBufferToDb() {
-        doWrite(storage.getBuffer());
-        DbSessionSetup.getSessionSetup().close();
-    }
+
 }
