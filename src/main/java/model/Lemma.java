@@ -50,11 +50,11 @@ public class Lemma {
         if (this == o) return true;
         if (!(o instanceof Lemma)) return false;
         Lemma lemma1 = (Lemma) o;
-        return getId() == lemma1.getId() && getLemma().equals(lemma1.getLemma());
+        return getLemma().equals(lemma1.getLemma());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getLemma());
+        return Objects.hash(getLemma());
     }
 }

@@ -3,6 +3,7 @@ package pagevisitor;
 import org.apache.log4j.Logger;
 import org.jsoup.Connection;
 import org.jsoup.nodes.Document;
+import pagevisitor.helpers.URLsStorage;
 
 import java.io.IOException;
 import java.util.*;

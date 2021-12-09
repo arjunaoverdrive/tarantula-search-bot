@@ -2,6 +2,7 @@ package model;
 
 import javax.persistence.*;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "page")
@@ -15,6 +16,12 @@ public class Page {
     private int code;
     @Column(length = 16777215 )
     private String content;
+
+//    @ManyToMany(cascade = CascadeType.ALL)
+//    @JoinTable(name = "`index`",
+//    joinColumns = {@JoinColumn(name = "page_id")},
+//    inverseJoinColumns = {@JoinColumn(name = "lemma_id")})
+//    private Set<Lemma> lemmas;
 
     public Page() {
     }
@@ -52,6 +59,14 @@ public class Page {
     public void setContent(String content) {
         this.content = content;
     }
+
+//    public Set<Lemma> getLemmas() {
+//        return lemmas;
+//    }
+//
+//    public void setLemmas(Set<Lemma> lemmas) {
+//        this.lemmas = lemmas;
+//    }
 
     @Override
     public boolean equals(Object o) {

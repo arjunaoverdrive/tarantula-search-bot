@@ -1,6 +1,7 @@
 package model;
 
 import javax.persistence.*;
+import java.util.Objects;
 
 @Entity
 @Table(name = "`index`")
@@ -13,15 +14,15 @@ public class Index {
     private int pageId;
     @Column(name = "lemma_id", nullable = false)
     private int lemmaId;
-    @Column(name = "`rank`")
+    @Column(name = "`rank`", nullable = false)
     private float rank;
 
     public Index() {
     }
 
     public Index(int lemma_id, int pageId,  float rank) {
-        this.pageId = pageId;
         this.lemmaId = lemma_id;
+        this.pageId = pageId;
         this.rank = rank;
     }
 
@@ -51,5 +52,18 @@ public class Index {
 
     public void setRank(float rank) {
         this.rank = rank;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Index)) return false;
+        Index index = (Index) o;
+        return getPageId() == index.getPageId() && getLemmaId() == index.getLemmaId() && Float.compare(index.getRank(), getRank()) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPageId(), getLemmaId(), getRank());
     }
 }
