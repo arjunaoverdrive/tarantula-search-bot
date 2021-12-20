@@ -3,7 +3,6 @@ package pagevisitor.helpers;
 import lemmatizer.LemmaCounter;
 import model.Lemma;
 import org.apache.log4j.Logger;
-import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -27,7 +26,7 @@ public class LemmaHelper {
     public LemmaHelper() throws IOException {
         this.lemma2ID = new TreeMap<>();
         this.lemmas = new TreeMap<>();
-        this.counter = new LemmaCounter(new RussianLuceneMorphology());
+        this.counter = new LemmaCounter();
     }
 
     private Map<String, Integer> countStringsInPageBlock(Connection connection, String css) {
@@ -48,10 +47,13 @@ public class LemmaHelper {
         return maps;
     }
 
-    public Set<String>getStringsFromPageBlocks(List<Map<String, Integer>> maps){
-        Set<String> stringsFromTitle = new HashSet<>(maps.get(0).keySet());
-        Set<String> stringsFromBody = new HashSet<>(maps.get(1).keySet());
+    public Set<String> getStringsFromPageBlocks(List<Map<String, Integer>> maps) {
+        Set<String> stringsFromTitle =
+                new HashSet<>(maps.get(0).keySet());
+        Set<String> stringsFromBody =
+                new HashSet<>(maps.get(1).keySet());
         stringsFromTitle.addAll(stringsFromBody);
+
         return stringsFromTitle;
     }
 
@@ -84,7 +86,7 @@ public class LemmaHelper {
                 .collect(Collectors.toSet());
     }
 
-    public Map<String, Integer> getLemma2ID(){
+    public Map<String, Integer> getLemma2ID() {
         return lemma2ID;
     }
 

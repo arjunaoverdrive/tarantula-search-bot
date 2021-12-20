@@ -1,7 +1,5 @@
 package model;
 
-import org.hibernate.annotations.SQLInsert;
-
 import javax.persistence.*;
 import java.util.Objects;
 
@@ -23,6 +21,10 @@ public class Lemma {
     public Lemma(String lemma, int frequency) {
         this.lemma = lemma;
         this.frequency = frequency;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public int getId() {
@@ -56,5 +58,14 @@ public class Lemma {
     @Override
     public int hashCode() {
         return Objects.hash(getLemma());
+    }
+
+    @Override
+    public String toString() {
+        return "Lemma{" +
+                "id=" + id +
+                ", lemma='" + lemma + '\'' +
+                ", frequency=" + frequency +
+                '}';
     }
 }

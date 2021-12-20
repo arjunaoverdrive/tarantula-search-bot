@@ -8,6 +8,7 @@ import org.hibernate.Transaction;
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
+import org.jsoup.UnsupportedMimeTypeException;
 import pagevisitor.helpers.IndexHelper;
 import pagevisitor.helpers.IndexPrototype;
 import pagevisitor.helpers.LemmaHelper;
@@ -15,6 +16,8 @@ import pagevisitor.helpers.URLsStorage;
 import util.DbSessionSetup;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.RecursiveAction;
 
@@ -41,8 +44,14 @@ public class WebPageVisitor extends RecursiveAction {
     @Override
     protected void compute() {
         Connection connection = getConnection(node.getPath());
-        Set<Node> childrenNodes = node.getChildrenNodes(connection, storage);
-        if (childrenNodes == null || childrenNodes.size() == 0) {
+        Set<Node> childrenNodes;
+        try {
+            childrenNodes = node.getChildrenNodes(connection, storage);
+        } catch (UnsupportedMimeTypeException e) {
+//            LOGGER.info(e + "...Returning");
+            return;
+        }
+        if (childrenNodes.size() == 0 || childrenNodes == null){
             return;
         }
         try {
@@ -63,11 +72,16 @@ public class WebPageVisitor extends RecursiveAction {
     }
 
     private void saveChildPageToStorage(Node node) {
+        Page page;
         Connection connection = getConnection(node.getPath());
-        Page page = createPageObject(connection);
+        try {
+            page = createPageObject(connection);
+        } catch (UnsupportedMimeTypeException e) {
+            return;
+        }
         if (storage.addPageURL(page.getPath())) {
             storage.addPage2Buffer(page);
-            if(page.getCode() == 200){
+            if (page.getCode() == 200) {
                 lemmaHelper.addLemmasToStorage(lemmaHelper.convertPageBlocks2stringMaps(connection));
             }
         }
@@ -76,19 +90,23 @@ public class WebPageVisitor extends RecursiveAction {
         }
     }
 
-    private void createIndexPrototypesForPage(Page p, int pageId){
+    private void createIndexPrototypesForPage(Page p) {
         if (p.getCode() == 200) {
+            int pageId = p.getId();
             Connection connection = getConnection(Main.DOMAIN + p.getPath().substring(1));
             List<Map<String, Integer>> maps =
                     lemmaHelper.convertPageBlocks2stringMaps(connection);
-            Set<String> lemmas =
-                    lemmaHelper.getStringsFromPageBlocks(maps);
-//            Set<String>lemmas = lemmasFromPageMap.keySet();
-                for(String s : lemmas){
-                    float rank = lemmaHelper.getWeightForLemma(s, maps);
-                    IndexPrototype ip= new IndexPrototype(pageId, s, rank);
-                    indexHelper.addIndexPrototype(ip);
-                }
+            Set<String> lemmas = new HashSet<>();
+            try {
+                lemmas = lemmaHelper.getStringsFromPageBlocks(maps);
+            } catch (NullPointerException npe) {
+                LOGGER.warn(p.getPath() + " " + npe);
+            }
+            for (String s : lemmas) {
+                float rank = lemmaHelper.getWeightForLemma(s, maps);
+                IndexPrototype ip = new IndexPrototype(pageId, s, rank);
+                indexHelper.addIndexPrototype(ip);
+            }
         }
     }
 
@@ -98,9 +116,10 @@ public class WebPageVisitor extends RecursiveAction {
         SessionFactory sessionFactory = DbSessionSetup.getSessionSetup();
         Session session = sessionFactory.openSession();
         Transaction transaction = session.beginTransaction();
-        for(Page p : pageSet){
+        for (Page p : pageSet) {
             int pageId = (int) session.save(p);
-            createIndexPrototypesForPage(p, pageId);
+            p.setId(pageId);
+            createIndexPrototypesForPage(p);
         }
         transaction.commit();
         count += pageSet.size();
@@ -117,20 +136,24 @@ public class WebPageVisitor extends RecursiveAction {
         return Jsoup.connect(path).userAgent(USER_AGENT).referrer("http://www.google.com");
     }
 
-    private Page createPageObject(Connection connection) {
+    private Page createPageObject(Connection connection) throws UnsupportedMimeTypeException {
         Page page;
-        Connection.Response response = null;
+        Connection.Response response;
         try {
             response = connection.execute();
             int statusCode = response.statusCode();
-            page = new Page(response.url().getPath(), statusCode, response.body());
+            String path = URLDecoder.decode(response.url().getPath(), StandardCharsets.UTF_8);
+            page = new Page(path, statusCode, response.body());
         } catch (HttpStatusException hse) {
-            String path = hse.getUrl().substring(Main.DOMAIN.length() - 1);
+            String path = URLDecoder.decode(hse.getUrl().substring(Main.DOMAIN.length() - 1), StandardCharsets.UTF_8);
             page = new Page(path, hse.getStatusCode(), "");
             LOGGER.warn(Thread.currentThread().getId() + " Page with empty content " + path);
             return page;
+        } catch (UnsupportedMimeTypeException e) {
+            throw new UnsupportedMimeTypeException("unsupported type", e.getMimeType(), e.getUrl());
         } catch (IOException e) {
-            page = new Page(connection.request().url().getPath(), 500, "");
+            String path = URLDecoder.decode(connection.request().url().getPath(), StandardCharsets.UTF_8);
+            page = new Page(path, 500, "");
             LOGGER.warn(e);
             return page;
         }
@@ -139,11 +162,18 @@ public class WebPageVisitor extends RecursiveAction {
 
     void saveRootPage() {
         Connection connection = getConnection(Main.DOMAIN);
-        Page rootPage = createPageObject(connection);
+        Page rootPage = null;
+        try {
+            rootPage = createPageObject(connection);
+        } catch (UnsupportedMimeTypeException e) {
+            LOGGER.info(e);
+        }
         storage.addPageURL(Main.DOMAIN);
         storage.addPage2Buffer(rootPage);
+        lemmaHelper.addLemmasToStorage(lemmaHelper.convertPageBlocks2stringMaps(connection));
     }
-    void saveIndiciesToDb(){
+
+    void saveIndicesToDb() {
         indexHelper.convertPrototypes2Indices(lemmaHelper.getLemma2ID());
     }
 }

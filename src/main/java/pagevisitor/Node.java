@@ -2,10 +2,13 @@ package pagevisitor;
 
 import org.apache.log4j.Logger;
 import org.jsoup.Connection;
+import org.jsoup.UnsupportedMimeTypeException;
 import org.jsoup.nodes.Document;
 import pagevisitor.helpers.URLsStorage;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,16 +23,19 @@ public class Node {
     }
 
     String getPath() {
-        return path;
+        return URLDecoder.decode(path, StandardCharsets.UTF_8);
     }
 
-    Set<Node> getChildrenNodes(Connection connection, URLsStorage storage) {
+    Set<Node> getChildrenNodes(Connection connection, URLsStorage storage) throws UnsupportedMimeTypeException {
         Set<Node> childrenNodes = new HashSet<>();
         Document doc = null;
         try {
             doc = connection.get();
-        } catch (IOException e) {
-            LOGGER.error(e);
+        } catch (UnsupportedMimeTypeException e){
+            throw new UnsupportedMimeTypeException(e.getMessage(), e.getMimeType(), e.getUrl());
+        }
+        catch (IOException e) {
+            LOGGER.warn(e);
         }
         List<String> links = getPathsListFromDocument(doc);
         for (String childLink : links) {
@@ -47,8 +53,8 @@ public class Node {
                 .distinct()
                 .filter(s -> s.matches(Main.DOMAIN + "(/)?.+"))
                 .filter(s -> !s.contains("#"))
-                .filter(s -> !s.matches(".+\\.\\w+"))
-                .filter(s -> !s.matches(".+login\\?.*"))
+                .filter(s -> !s.contains("login"))
+                .filter(s -> !s.matches(".+http(s)?.+"))
                 .collect(Collectors.toList());
     }
 

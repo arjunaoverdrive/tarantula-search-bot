@@ -38,7 +38,7 @@ public class IndexHelper {
                 Index indx = new Index(lemmaId, pageId, rank);
                 indices.add(indx);
             }
-        } catch (NullPointerException npe) {
+        } catch (NullPointerException npe) { //for debugging purposes
             LOGGER.error(npe + " i " + prototypes.get(i));
         }
         saveIndicesToDb(indices);
@@ -57,7 +57,7 @@ public class IndexHelper {
                 }
             }
             indices2save.clear();
-            DbConnection.closeConnection();
+//            DbConnection.closeConnection();
         } catch (SQLException e) {
             LOGGER.error(e);
         }
