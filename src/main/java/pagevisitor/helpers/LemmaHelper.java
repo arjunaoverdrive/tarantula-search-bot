@@ -7,6 +7,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.jsoup.Connection;
+import org.jsoup.Jsoup;
 import util.DbSessionSetup;
 
 import java.io.IOException;
@@ -29,21 +30,16 @@ public class LemmaHelper {
         this.counter = new LemmaCounter();
     }
 
-    private Map<String, Integer> countStringsInPageBlock(Connection connection, String css) {
-        Map<String, Integer> strings2count = null;
-        try {
-            String text = connection.get().select(css).text();
-            strings2count = counter.countLemmas(text);
-        } catch (IOException e) {
-            LOGGER.warn(e);
-        }
-        return strings2count;
+    private Map<String, Integer> countStringsInPageBlock(String html, String css) {
+
+            String text = Jsoup.parse(html).select(css).text();
+             return counter.countLemmas(text);
     }
 
-    public List<Map<String, Integer>> convertPageBlocks2stringMaps(Connection connection) {
+    public List<Map<String, Integer>> convertPageBlocks2stringMaps(String html) {
         List<Map<String, Integer>> maps = new ArrayList<>();
-        maps.add(countStringsInPageBlock(connection, "title"));
-        maps.add(countStringsInPageBlock(connection, "body"));
+        maps.add(countStringsInPageBlock(html, "title"));
+        maps.add(countStringsInPageBlock(html, "body"));
         return maps;
     }
 

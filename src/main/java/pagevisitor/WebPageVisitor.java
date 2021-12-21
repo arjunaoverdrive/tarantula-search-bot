@@ -48,10 +48,9 @@ public class WebPageVisitor extends RecursiveAction {
         try {
             childrenNodes = node.getChildrenNodes(connection, storage);
         } catch (UnsupportedMimeTypeException e) {
-//            LOGGER.info(e + "...Returning");
             return;
         }
-        if (childrenNodes.size() == 0 || childrenNodes == null){
+        if (childrenNodes.size() == 0){
             return;
         }
         try {
@@ -82,7 +81,7 @@ public class WebPageVisitor extends RecursiveAction {
         if (storage.addPageURL(page.getPath())) {
             storage.addPage2Buffer(page);
             if (page.getCode() == 200) {
-                lemmaHelper.addLemmasToStorage(lemmaHelper.convertPageBlocks2stringMaps(connection));
+                lemmaHelper.addLemmasToStorage(lemmaHelper.convertPageBlocks2stringMaps(page.getContent()));
             }
         }
         if (storage.getBuffer().size() >= BUFFER_SIZE) {
@@ -93,9 +92,9 @@ public class WebPageVisitor extends RecursiveAction {
     private void createIndexPrototypesForPage(Page p) {
         if (p.getCode() == 200) {
             int pageId = p.getId();
-            Connection connection = getConnection(Main.DOMAIN + p.getPath().substring(1));
+            String html = p.getContent();
             List<Map<String, Integer>> maps =
-                    lemmaHelper.convertPageBlocks2stringMaps(connection);
+                    lemmaHelper.convertPageBlocks2stringMaps(html);
             Set<String> lemmas = new HashSet<>();
             try {
                 lemmas = lemmaHelper.getStringsFromPageBlocks(maps);
@@ -170,7 +169,7 @@ public class WebPageVisitor extends RecursiveAction {
         }
         storage.addPageURL(Main.DOMAIN);
         storage.addPage2Buffer(rootPage);
-        lemmaHelper.addLemmasToStorage(lemmaHelper.convertPageBlocks2stringMaps(connection));
+        lemmaHelper.addLemmasToStorage(lemmaHelper.convertPageBlocks2stringMaps(rootPage.getContent()));
     }
 
     void saveIndicesToDb() {

@@ -28,19 +28,20 @@ public class IndexHelper {
     }
 
     public void convertPrototypes2Indices(Map<String, Integer> lemma2ID) {
-        int i = 0;
-        try {
-            for (i = 0; i < prototypes.size(); i++) {
+            for (int i = 0; i < prototypes.size(); i++) {
                 IndexPrototype ip = prototypes.get(i);
-                int lemmaId = lemma2ID.get(ip.getLemma());
+                int lemmaId = -1;
+                try {
+                 lemmaId = lemma2ID.get(ip.getLemma());
+                } catch (NullPointerException npe) { //for debugging purposes
+                    LOGGER.error(npe + " i " + i + " " +  prototypes.get(i));
+
+                }
                 int pageId = ip.getPageId();
                 float rank = ip.getRank();
                 Index indx = new Index(lemmaId, pageId, rank);
                 indices.add(indx);
             }
-        } catch (NullPointerException npe) { //for debugging purposes
-            LOGGER.error(npe + " i " + prototypes.get(i));
-        }
         saveIndicesToDb(indices);
     }
 
@@ -57,7 +58,6 @@ public class IndexHelper {
                 }
             }
             indices2save.clear();
-//            DbConnection.closeConnection();
         } catch (SQLException e) {
             LOGGER.error(e);
         }

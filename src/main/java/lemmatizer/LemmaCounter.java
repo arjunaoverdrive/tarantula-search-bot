@@ -28,16 +28,6 @@ import java.util.stream.Collectors;
             return lemma2count;
         }
 
-        public String getBasicForm(String s){
-            if(luceneMorphology.checkString(s) && s.length() > 2){
-                String wordInfo =  luceneMorphology.getMorphInfo(s).get(0);
-                if(wordInfo.matches("[а-я]+\\|\\w\\s[А-Я]+\\s\\D+")){
-                    return luceneMorphology.getNormalForms(s.substring(0, s.indexOf('|'))).get(0);
-                }
-            }
-            return " ";
-        }
-
         private List<String> getListOfNotionalWords(String[] words) {
             return Arrays.stream(words)
                     .map(s -> s.toLowerCase(Locale.ROOT))
