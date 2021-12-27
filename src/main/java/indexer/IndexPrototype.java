@@ -1,4 +1,4 @@
-package pagevisitor.helpers;
+package indexer;
 
 import java.util.Objects;
 

@@ -1,4 +1,4 @@
-package pagevisitor.helpers;
+package indexer.helpers;
 
 import lemmatizer.LemmaCounter;
 import model.Lemma;
@@ -6,7 +6,6 @@ import org.apache.log4j.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import util.DbSessionSetup;
 
@@ -56,9 +55,10 @@ public class LemmaHelper {
     public void addLemmasToStorage(List<Map<String, Integer>> maps) {
         Set<String> lemmasFromPage = getStringsFromPageBlocks(maps);
         for (String s : lemmasFromPage) {
-            if (lemmas.containsKey(s)) {
-                lemmas.computeIfPresent(s, (key, value) -> value + 1);
-            } else lemmas.put(s, 1);
+            lemmas.compute(s, (k , v) -> (v == null) ? 1 : v + 1);
+//            if (lemmas.containsKey(s)) {
+//                lemmas.computeIfPresent(s, (key, value) -> value + 1);
+//            } else lemmas.put(s, 1);
         }
     }
 

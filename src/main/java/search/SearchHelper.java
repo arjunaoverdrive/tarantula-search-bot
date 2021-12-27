@@ -1,9 +1,11 @@
 package search;
 
+import exceptions.PagesNotFoundException;
 import lemmatizer.LemmaCounter;
 import model.Index;
 import model.Lemma;
 import model.Page;
+import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 public class SearchHelper {
     String query;
     private final LemmaCounter counter;
+    private final Logger LOGGER = Logger.getLogger(SearchHelper.class);
 
     public SearchHelper(String query) throws IOException {
         this.query = query;
@@ -28,21 +31,29 @@ public class SearchHelper {
         return counter.countLemmas(query).keySet();
     }
 
-    private String createSqlToGetLemmas(){
+    private String createSqlToGetLemmas() {
         StringBuilder sql = new StringBuilder("SELECT id, lemma, frequency FROM lemma WHERE lemma IN (");
-        for(String s : getStringSet()){
+        Set<String> words = getStringSet();
+        if (words.size() == 0){
+            return "";
+        }
+        for (String s : words) {
             sql.append("'").append(s).append("'").append(", ");
         }
-        sql.deleteCharAt(sql.length() - 2);
+        sql.delete(sql.lastIndexOf(","), sql.length());
         sql.append(")");
         return sql.toString();
     }
 
-    private List<Lemma> getLemmas(){
+    private List<Lemma> getLemmas() {
         List<Lemma> lemmas = new ArrayList<>();
+        String sql = createSqlToGetLemmas();
+        if(sql.isEmpty()) {
+            return lemmas;
+        }
         try {
-            ResultSet rs = DbConnection.getConnection().createStatement().executeQuery(createSqlToGetLemmas());
-            while(rs.next()){
+            ResultSet rs = DbConnection.getConnection().createStatement().executeQuery(sql);
+            while (rs.next()) {
                 Lemma l = new Lemma();
                 l.setId(rs.getInt("id"));
                 l.setLemma(rs.getString("lemma"));
@@ -50,7 +61,7 @@ public class SearchHelper {
                 lemmas.add(l);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error(e);
         }
         return lemmas;
     }
@@ -58,86 +69,99 @@ public class SearchHelper {
     private int getMaxFrequency() {
         String sql = "SELECT count(id) as `count` FROM page";
         int pageCount = 0;
-
         try {
             ResultSet rs = DbConnection.getConnection().createStatement().executeQuery(sql);
             while (rs.next()) {
                 pageCount = rs.getInt("count");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error(e);
         }
         return pageCount;
     }
 
-    private List<Lemma> sortLemmasByFrequency() {
-        float threshold = getMaxFrequency() * 0.7f;
+    private List<Lemma> ignoreFrequentLemmas() {
+        float threshold = getMaxFrequency() * 0.5f;
         List<Lemma> lemmas = getLemmas();
         return lemmas
                 .stream()
-                .sorted(Comparator.comparing(Lemma::getFrequency))
                 .filter(lemma -> lemma.getFrequency() < threshold && lemma.getFrequency() != 0)
-//                .map(lemma -> lemma.getLemma())
                 .collect(Collectors.toList());
     }
 
-    public List<Lemma> getSortedList() {
-
-        return sortLemmasByFrequency();
-    }
 
     private List<Integer> getLemmasIds() {
-        List<Lemma> lemmas = getSortedList();
+        List<Lemma> lemmas = ignoreFrequentLemmas();
         List<Integer> ids = new ArrayList<>();
-        for(Lemma l : lemmas){
+        for (Lemma l : lemmas) {
             ids.add(l.getId());
         }
         return ids;
     }
 
-    private List<Integer> getPageIdsByLemmaId() {
-        List<Integer> lemmaIds = getLemmasIds();
-        List<Integer> pagesIds = new ArrayList<>();
-        List<Integer> pages = new ArrayList<>();
-        for (int i = 0; i < lemmaIds.size(); i++) {
-            String sql = "SELECT page_id FROM `index` WHERE lemma_id = " + lemmaIds.get(i);
-            try {
-                ResultSet rs = DbConnection.getConnection().createStatement().executeQuery(sql);
-                while (rs.next()) {
-                    int id = rs.getInt("page_id");
-                    pagesIds.add(id);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            if (i == 0) {
-                pages.addAll(pagesIds);
-            } else {
-                pages.retainAll(pagesIds);
-            }
-            pagesIds.clear();
+    private String createSqlToGetPagesContainingLemmas(List<Integer> lemmaIds) {
+        StringBuilder sql = new StringBuilder("SELECT page_id FROM `index` WHERE lemma_id IN (");
+        for (Integer lemmaId : lemmaIds) {
+            sql.append(lemmaId).append(", ");
         }
-        return pages;
+        sql.delete(sql.lastIndexOf(","), sql.length());
+        sql.append(")");
+        return sql.toString();
     }
 
-    private String createSqlToGetIndices() {
+    private Map<Integer, Integer> getPage2CountMap() {
+        List<Integer> lemmaIds = getLemmasIds();
+        Map<Integer, Integer> page2count = new HashMap<>();
+        if (lemmaIds.size() == 0){
+            return page2count;
+        }
+        String sql = createSqlToGetPagesContainingLemmas(lemmaIds);
+        try {
+            ResultSet rs = DbConnection.getConnection().createStatement().executeQuery(sql);
+            while (rs.next()) {
+                int id = rs.getInt("page_id");
+                page2count.compute(id, (k, v) -> (v == null) ? 1 : v + 1);
+            }
+        } catch (SQLException e) {
+            LOGGER.error(e);
+        }
+        return page2count;
+    }
+
+    private List<Integer> getPageIdsByLemmaId() {
+        List<Integer> lemmaIds = getLemmasIds();
+        List<Integer> pageIds = new ArrayList<>();
+        int count = lemmaIds.size();
+        Map<Integer, Integer> page2count = getPage2CountMap();
+        for (Map.Entry<Integer, Integer> e : page2count.entrySet()) {
+            if (e.getValue() == count) {
+                pageIds.add(e.getKey());
+            }
+        }
+        return pageIds;
+    }
+
+    private String createSqlToGetIndices() throws PagesNotFoundException {
         List<Integer> lemmaIds = getLemmasIds();
         List<Integer> pageIds = getPageIdsByLemmaId();
+        if (pageIds.size() == 0) {
+            throw new PagesNotFoundException("Pages containing lemmas from query not found");
+        }
         StringBuilder sql = new StringBuilder("SELECT lemma_id, page_id, `rank` FROM `index` WHERE lemma_id IN (");
         for (Integer lemmaId : lemmaIds) {
             sql.append(lemmaId).append(", ");
         }
-        sql.deleteCharAt(sql.length() - 2);
+        sql.delete(sql.lastIndexOf(","), sql.length());
         sql.append(") AND page_id IN (");
         for (Integer pageId : pageIds) {
             sql.append(pageId).append(", ");
         }
-        sql.deleteCharAt(sql.length() - 2);
-        sql.append(") LIMIT 100");
+        sql.delete(sql.lastIndexOf(","), sql.length());
+        sql.append(")");
         return sql.toString();
     }
 
-    private List<Index> getIndices() {
+    private List<Index> getIndices() throws PagesNotFoundException {
         String sql = createSqlToGetIndices();
         List<Index> indices = new ArrayList<>();
         try {
@@ -150,18 +174,18 @@ public class SearchHelper {
                 indices.add(index);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error(e);
         }
         return indices;
     }
 
-    private Map<Integer, Float> countAbsoluteRelevanceForPages() {
+    private Map<Integer, Float> countAbsoluteRelevanceForPages() throws PagesNotFoundException {
         List<Index> indices = getIndices();
         return indices.stream()
                 .collect(Collectors.toMap(Index::getPageId, Index::getRank, Float::sum, HashMap::new));
     }
 
-    private float getMaxRelevanceFromPagesList() {
+    private float getMaxRelevanceFromPagesList() throws PagesNotFoundException {
         Map<Integer, Float> page2absoluteRelevance = countAbsoluteRelevanceForPages();
         return page2absoluteRelevance.values()
                 .stream()
@@ -169,12 +193,12 @@ public class SearchHelper {
                 .get();
     }
 
-    private Map<Integer, Float> calculateRelevanceForPages(){
+    private Map<Integer, Float> calculateRelevanceForPages() throws PagesNotFoundException {
         Map<Integer, Float> page2absRelevance = countAbsoluteRelevanceForPages();
         Set<Integer> ids = page2absRelevance.keySet();
         Map<Integer, Float> page2relevance = new HashMap<>();
         float max = getMaxRelevanceFromPagesList();
-        for(int id : ids){
+        for (int id : ids) {
             float absRel = page2absRelevance.get(id);
             float rel = absRel / max;
             page2relevance.put(id, rel);
@@ -182,23 +206,23 @@ public class SearchHelper {
         return page2relevance;
     }
 
-    private String createQuery2getPagesList(){
+    private String createQuery2getPagesList() throws PagesNotFoundException {
         Set<Integer> pagesIds = calculateRelevanceForPages().keySet();
         StringBuilder sql = new StringBuilder("SELECT id, path, content FROM page WHERE id IN (");
-        for(int id : pagesIds){
+        for (int id : pagesIds) {
             sql.append(id).append(", ");
         }
-        sql.deleteCharAt(sql.length() - 2);
+        sql.delete(sql.lastIndexOf(","), sql.length());
         sql.append(")");
         return sql.toString();
     }
 
-    private List<Page> getPages(){
-        List<Page>foundPages = new ArrayList<>();
+    private List<Page> getPages() {
+        List<Page> foundPages = new ArrayList<>();
         try {
             ResultSet rs = DbConnection.getConnection().createStatement()
                     .executeQuery(createQuery2getPagesList());
-            while(rs.next()){
+            while (rs.next()) {
                 Page p = new Page();
                 p.setId(rs.getInt("id"));
                 p.setPath(rs.getString("path"));
@@ -206,66 +230,78 @@ public class SearchHelper {
                 foundPages.add(p);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error(e);
+        } catch (PagesNotFoundException e) {
+            LOGGER.warn(e.getMessage());
         }
         return foundPages;
     }
 
-    private String getTitle(String html){
+    private String getTitle(String html) {
         return Jsoup.parse(html).select("title").text();
     }
 
-    private String getQueryRegex(){
-        String[]strings = query.split(" ");
+    private String getQueryRegex() {
+        String[] strings = query.split(" ");
         List<String> stringsList = Arrays.stream(strings)
                 .filter(s -> s.length() > 2)
                 .map(s -> s.replaceAll("[^А-Яа-я]", ""))
                 .filter(s -> !s.isBlank())
                 .collect(Collectors.toList());
         StringBuilder builder = new StringBuilder("(?s).*");
-        for(String s : stringsList){
+        for (String s : stringsList) {
             builder.append(s).append(".*");
         }
         return builder.toString();
     }
 
-    private String getSnippetPagePart(String html){
+    private String getPageElementWithOwnTextMatchingRegex(String html) {
         Document doc = Jsoup.parse(html);
         String queryPattern = getQueryRegex();
         List<Element> elements = doc.getAllElements();
-
-        String res = elements.stream()
+        Optional<String> optional = elements.stream()
                 .map(Element::ownText)
                 .filter(s -> s.matches(queryPattern))
-                .findFirst().get();
-        return res;
+                .findFirst();
+        return optional.orElseThrow(() -> new NoSuchElementException("No exact match was found"));
     }
 
 
-    private int getFirstOccurrenceIndex(String text){
-        String[]strings = query.replaceAll("[^А-Яа-я]", " ").split("\\s");
-        List<String> strsList = Arrays.stream(strings).filter(s -> s.length() > 3).collect(Collectors.toList());
-        int offset = text.indexOf(strsList.get(0));
-        for(String s : strsList){
-            if(text.indexOf(s) < offset)
-                offset = text.indexOf(s);
+    private String createSnippet(String html) {
+        SnippetParser parser = null;
+        try {
+            parser = new SnippetParser(query, getPageElementWithOwnTextMatchingRegex(html));
+        } catch (NoSuchElementException e) {
+            String pageText = Jsoup.parse(html).text();
+            try {
+                parser = new SnippetParser(query, pageText);
+            } catch (IOException ioe) {
+                LOGGER.warn(ioe);
+            }
+            String res = parser.removeExtraTags();
+            return res.length() < 500 ? res : parser.shortenLongSnippet(res);
+        } catch (IOException e) {
+            LOGGER.error(e);
         }
-        return offset;
+        return parser.removeExtraTags();
     }
 
-    //todo write a method to highlight occurrences of the search in the text
 
-    private List<FoundPage> getFoundPages(){
-        List<FoundPage>foundPages = new ArrayList<>();
-        Map<Integer, Float> page2rel = calculateRelevanceForPages();
-        List<Page>pages = getPages();
-        for(Page p : pages){
+    private List<FoundPage> getFoundPages() {
+        List<FoundPage> foundPages = new ArrayList<>();
+        Map<Integer, Float> page2rel;
+        try {
+            page2rel = calculateRelevanceForPages();
+        } catch (PagesNotFoundException e) {
+            LOGGER.warn(e.getMessage());
+            return new ArrayList<>();
+        }
+        List<Page> pages = getPages();
+        for (Page p : pages) {
             String uri = p.getPath();
             String pageText = p.getContent();
             String title = getTitle(pageText);
-//            int offset = getFirstOccurrenceIndex(getSnippetPagePart(pageText));
-            String snippet = getSnippetPagePart(pageText);
-//                    .substring(offset);
+            String snippet = createSnippet(pageText);
             float relevance = page2rel.get(p.getId());
             FoundPage foundPage = new FoundPage(uri, title, snippet, relevance);
             foundPages.add(foundPage);
@@ -273,8 +309,8 @@ public class SearchHelper {
         return foundPages;
     }
 
-    public List<FoundPage> sortFoundPages(){
-        List<FoundPage>pages = getFoundPages();
+    public List<FoundPage> sortFoundPages() {
+        List<FoundPage> pages = getFoundPages();
         List<FoundPage> sortedPages = pages.stream()
                 .sorted(Comparator.comparing(FoundPage::getRelevance).reversed())
                 .collect(Collectors.toList());

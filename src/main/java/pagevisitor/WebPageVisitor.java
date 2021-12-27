@@ -9,10 +9,10 @@ import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.UnsupportedMimeTypeException;
-import pagevisitor.helpers.IndexHelper;
-import pagevisitor.helpers.IndexPrototype;
-import pagevisitor.helpers.LemmaHelper;
-import pagevisitor.helpers.URLsStorage;
+import indexer.helpers.IndexHelper;
+import indexer.IndexPrototype;
+import indexer.helpers.LemmaHelper;
+import indexer.helpers.URLsStorage;
 import util.DbSessionSetup;
 
 import java.io.IOException;
@@ -153,7 +153,7 @@ public class WebPageVisitor extends RecursiveAction {
         } catch (IOException e) {
             String path = URLDecoder.decode(connection.request().url().getPath(), StandardCharsets.UTF_8);
             page = new Page(path, 500, "");
-            LOGGER.warn(e);
+            LOGGER.warn(e + " " + path);
             return page;
         }
         return page;

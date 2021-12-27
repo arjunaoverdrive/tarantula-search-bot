@@ -4,7 +4,7 @@ import org.apache.log4j.Logger;
 import org.jsoup.Connection;
 import org.jsoup.UnsupportedMimeTypeException;
 import org.jsoup.nodes.Document;
-import pagevisitor.helpers.URLsStorage;
+import indexer.helpers.URLsStorage;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -54,6 +54,7 @@ public class Node {
                 .filter(s -> s.matches(Main.DOMAIN + "(/)?.+"))
                 .filter(s -> !s.contains("#"))
                 .filter(s -> !s.contains("login"))
+                .filter(s -> !s.endsWith("PDF") && !s.endsWith("doc") && !s.endsWith("jpg"))
                 .filter(s -> !s.matches(".+http(s)?.+"))
                 .collect(Collectors.toList());
     }

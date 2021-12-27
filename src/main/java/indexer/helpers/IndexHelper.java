@@ -1,5 +1,6 @@
-package pagevisitor.helpers;
+package indexer.helpers;
 
+import indexer.IndexPrototype;
 import model.Index;
 
 import org.apache.log4j.Logger;
@@ -35,7 +36,6 @@ public class IndexHelper {
                  lemmaId = lemma2ID.get(ip.getLemma());
                 } catch (NullPointerException npe) { //for debugging purposes
                     LOGGER.error(npe + " i " + i + " " +  prototypes.get(i));
-
                 }
                 int pageId = ip.getPageId();
                 float rank = ip.getRank();
