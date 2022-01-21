@@ -52,7 +52,7 @@ public class LemmaHelper {
         return stringsFromTitle;
     }
 
-    public void addLemmasToStorage(List<Map<String, Integer>> maps) {
+    public void addLemmasCache(List<Map<String, Integer>> maps) {
         Set<String> lemmasFromPage = getStringsFromPageBlocks(maps);
         for (String s : lemmasFromPage) {
             lemmas.compute(s, (k , v) -> (v == null) ? 1 : v + 1);

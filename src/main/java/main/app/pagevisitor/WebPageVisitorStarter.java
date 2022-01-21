@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ConcurrentModificationException;
 import java.util.concurrent.ForkJoinPool;
 
 public class WebPageVisitorStarter implements Runnable {
@@ -24,19 +25,19 @@ public class WebPageVisitorStarter implements Runnable {
     private final LemmaRepository lemmaRepository;
     private final PageRepository pageRepository;
     private final SiteRepository siteRepository;
-    private final Site site;
+    private final Site siteFromConfig;
     private final ConfigProperties props;
     private final IndexRepository indexRepository;
     private final AppState appState;
 
-    public WebPageVisitorStarter(Site site,
+    public WebPageVisitorStarter(Site siteFromConfig,
                                  LemmaRepository lemmaRepository,
                                  PageRepository pageRepository,
                                  SiteRepository siteRepository,
                                  ConfigProperties props,
                                  IndexRepository indexRepository,
                                  AppState appState) {
-        this.site = site;
+        this.siteFromConfig = siteFromConfig;
         this.lemmaRepository = lemmaRepository;
         this.pageRepository = pageRepository;
         this.siteRepository = siteRepository;
@@ -47,49 +48,51 @@ public class WebPageVisitorStarter implements Runnable {
 
     @Override
     public void run() {
-        Site foundInDb = siteRepository.findByName(site.getName());
-        int id = foundInDb == null ? siteRepository.save(site).getId() : foundInDb.getId();
+        long start = System.currentTimeMillis();
         synchronized (appState) {
-            long start = System.currentTimeMillis();
-
-            try {
-                while (appState.isIndexing()) {
+            while (appState.isIndexing()) {
+                try {
                     appState.wait();
+                } catch (InterruptedException e) {
+                    LOGGER.error(e);
                 }
+            }
+            try {
                 if (!appState.isStopped()) {
                     appState.setIndexing(true);
-                    WebPageVisitor visitor = initWebPageVisitor(id);
+                    WebPageVisitor visitor = initWebPageVisitor(siteFromConfig);
                     saveVisitorData(visitor);
-                    saveSite(site, StatusEnum.INDEXED, "");
+                    saveSite(siteFromConfig, StatusEnum.INDEXED, "");
                 }
                 if (appState.isStopped()) {
-                    LOGGER.error("Indexing was interrupted ");
-                    throw new RuntimeException("Indexing was interrupted");
+                    saveSite(siteFromConfig, StatusEnum.FAILED, "Indexing was interrupted");
+                    LOGGER.error("Indexing was interrupted");
                 }
             } catch (Exception e) {
-                saveSite(site, StatusEnum.FAILED, e.getMessage());
+                saveSite(siteFromConfig, StatusEnum.FAILED, e.getLocalizedMessage());
                 LOGGER.error(e);
             } finally {
-                LOGGER.info("Thread " + Thread.currentThread().getId() + " Took " + (System.currentTimeMillis() - start));
                 appState.setIndexing(false);
-                appState.notifyAll();
+                appState.notify();
+                LOGGER.info("Thread " + Thread.currentThread().getId() + " Took " + (System.currentTimeMillis() - start));
             }
         }
     }
 
-    private WebPageVisitor initWebPageVisitor(int siteId) throws IOException {
+    private WebPageVisitor initWebPageVisitor(Site site) throws IOException {
+        int siteId = site.getId();
         String root = site.getUrl();
 
         Node rootNode = new Node(root, root);
-        URLsStorage storage = new URLsStorage(root, pageRepository);
-        IndexHelper indexHelper = new IndexHelper(indexRepository);
+        URLsStorage storage = new URLsStorage(root, pageRepository, siteRepository, props);
+        IndexHelper indexHelper = new IndexHelper();
         LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository);
 
         return new WebPageVisitor(siteId, rootNode, siteRepository,
-                storage, lemmaHelper, indexHelper, props, appState);
+                storage, lemmaHelper, indexHelper, appState);
     }
 
-    private void saveVisitorData(WebPageVisitor visitor) {
+    private void saveVisitorData(WebPageVisitor visitor) throws ConcurrentModificationException {
         visitor.saveRootPage();
         ForkJoinPool fjp = new ForkJoinPool();
         fjp.invoke(visitor);
@@ -105,7 +108,5 @@ public class WebPageVisitorStarter implements Runnable {
         siteRepository.save(site);
     }
 
-    public Thread getThread() {
-        return Thread.currentThread();
-    }
+
 }

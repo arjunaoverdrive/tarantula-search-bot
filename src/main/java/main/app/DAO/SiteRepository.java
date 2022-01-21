@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SiteRepository extends JpaRepository<Site, Integer> {
     Site findByName(String name);
+
+    Site findByUrl(String targetSite);
 }

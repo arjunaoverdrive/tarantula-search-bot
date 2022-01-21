@@ -53,7 +53,7 @@ public class Node {
 
     private List<String> getPathsListFromDocument(Document doc) {
         String extention =
-                ".+\\.((doc)?(docx)?(pdf)?(PDF)?(xls)?(xlsx)?(pptx)?(jpg)?(jpeg)?(gif)?(png)?(JPEG)?(GIF)?(PNG)?){1}$";
+                ".+\\.((doc)?(docx)?(pdf)?(PDF)?(xls)?(xlsx)?(pptx)?(jpg)?(jpeg)?(gif)?(png)?(JPEG)?(GIF)?(PNG)?(JPG)?){1}$";
         return doc.select("a[href]").stream()
                 .map(e -> e.attr("abs:href"))
                 .distinct()

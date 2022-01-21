@@ -1,6 +1,5 @@
 package main.app.indexer.helpers;
 
-import main.app.DAO.IndexRepository;
 import main.app.config.DbConnection;
 import main.app.indexer.IndexPrototype;
 import main.app.model.Index;
@@ -15,15 +14,14 @@ public class IndexHelper {
 
     private final List<Index> indices;
     private final List<IndexPrototype> prototypes;
-    private final IndexRepository indexRepository;
+
 
     private StringBuilder builder = new StringBuilder();
     private final static int BUILDER_SIZE = 2_980_000;
 
     private static final Logger LOGGER = Logger.getLogger(IndexHelper.class);
 
-    public IndexHelper(IndexRepository indexRepository) {
-        this.indexRepository = indexRepository;
+    public IndexHelper() {
         this.indices = new ArrayList<>();
         this.prototypes = new ArrayList<>();
     }
@@ -32,7 +30,7 @@ public class IndexHelper {
         prototypes.add(ip);
     }
 
-    public void convertPrototypes2Indices(Map<String, Integer> lemma2ID) throws SQLException {
+    public void saveIndicesToDb(Map<String, Integer> lemma2ID) throws SQLException {
         for (int i = 0; i < prototypes.size(); i++) {
             IndexPrototype ip = prototypes.get(i);
             int lemmaId = -1;
@@ -46,10 +44,10 @@ public class IndexHelper {
             Index indx = new Index(lemmaId, pageId, rank);
             indices.add(indx);
         }
-        saveIndicesToDb(indices);
+        doWrite(indices);
     }
 
-    public void saveIndicesToDb(List<Index> indices) throws SQLException {
+    public void doWrite(List<Index> indices) throws SQLException {
         LOGGER.info("Starting saving indices");
         List<Index> indices2save = new ArrayList<>(indices);
         indices.clear();
@@ -61,7 +59,6 @@ public class IndexHelper {
                     builder = new StringBuilder();
                 }
             }
-//        indexRepository.saveAll(indices2save);
         LOGGER.info("Saved " + indices2save.size() + " indices");
         indices2save.clear();
     }

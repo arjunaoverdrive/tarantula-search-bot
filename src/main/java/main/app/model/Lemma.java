@@ -1,11 +1,13 @@
 package main.app.model;
 
+import org.hibernate.annotations.SQLInsert;
+
 import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
 @Table(name = "lemma")
-//@SQLInsert(sql = "INSERT INTO lemma(frequency, lemma, site_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE frequency = frequency + VALUES(frequency)")
+@SQLInsert(sql = "INSERT INTO lemma(frequency, lemma, site_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE frequency = frequency + VALUES(frequency)")
 public class Lemma {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

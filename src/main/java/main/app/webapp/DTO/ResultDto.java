@@ -1,35 +1,27 @@
 package main.app.webapp.DTO;
 
 public class ResultDto {
-    private boolean result;
+    private final boolean result;
 
-    public ResultDto() {
+    public ResultDto(boolean result) {
         this.result = result;
+    }
+    public boolean isResult() {
+        return result;
     }
 
     public static class Success extends ResultDto{
-        private final boolean result;
-
         public Success() {
-            this.result = true;
-        }
-
-        public boolean isResult() {
-            return result;
+            super(true);
         }
     }
 
     public static class Error extends ResultDto{
-        private final boolean result;
         private String error;
 
         public Error(String error) {
-            this.result = false;
+            super(false);
             this.error = error;
-        }
-
-        public boolean isResult() {
-            return result;
         }
 
         public String getError() {
