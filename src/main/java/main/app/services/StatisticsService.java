@@ -5,6 +5,7 @@ import main.app.DAO.PageRepository;
 import main.app.DAO.SiteRepository;
 import main.app.config.AppState;
 import main.app.model.Site;
+import main.app.model.StatusEnum;
 import main.app.webapp.DTO.SiteDto;
 import main.app.webapp.DTO.StatisticsDto;
 import main.app.webapp.DTO.StatisticsDtoWrapper;
@@ -67,14 +68,26 @@ public class StatisticsService {
                 SiteDto dto = new SiteDto();
                 dto.setUrl(s.getUrl());
                 dto.setName(s.getName());
-                dto.setStatus(s.getStatus().toString());
                 dto.setStatusTime(s.getStatusTime());
                 dto.setPages(pageRepository.countBySiteId(s.getId()));
                 dto.setLemmas(lemmaRepository.countBySiteId(s.getId()));
                 dto.setError(s.getLastError() != null ? s.getLastError() : "");
+                dto.setStatus(s.getStatus().toString());
+                if(!appState.isIndexing() && s.getStatus().equals(StatusEnum.INDEXING)){
+                    handleUnindexedSite(dto, s);
+                    dto.setStatusTime(s.getStatusTime());
+                }
                 dtos.add(dto);
             }
         }
         return dtos;
+    }
+
+    private void handleUnindexedSite(SiteDto dto, Site s){
+        s.setStatus(StatusEnum.FAILED);
+        s.setLastError("Приложение было остановлено во время индексации");
+        dto.setStatus(StatusEnum.FAILED.toString());
+        dto.setError("Приложение было остановлено во время индексации");
+        siteRepository.save(s);
     }
 }

@@ -31,7 +31,6 @@ public class SiteService {
     private final IndexRepository indexRepository;
     private final ConfigProperties props;
     private final AppState appState;
-    private Set<WebPageVisitorStarter> starters = new HashSet<>();
 
     private static final Logger LOGGER = Logger.getLogger(SiteService.class);
 
@@ -62,6 +61,7 @@ public class SiteService {
                 break;
             }
             Site site = siteRepository.findByName(s.getName());
+
             if (site == null) {
                 site = siteRepository.save(new Site(LocalDateTime.now(), "",
                         s.getUrl(), s.getName(), StatusEnum.INDEXING));
@@ -73,8 +73,8 @@ public class SiteService {
             t.start();
             try {
                 t.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                LOGGER.error(e);
             }
         }
     }
@@ -126,13 +126,10 @@ public class SiteService {
     public ResultDto stopIndexing() {
         if (!appState.isIndexing() || appState.isStopped()) {
             return new ResultDto.Error("Индексация не запущена");
-        } try {
-            appState.setStopped(true);
-            return new ResultDto.Success();
-        } catch (Exception e){
-            LOGGER.error(e.getLocalizedMessage());
-            return new ResultDto.Error(e.getLocalizedMessage());
         }
+        appState.setStopped(true);
+        return new ResultDto.Success();
+
     }
 
     public ResultDto indexPage(String url) {
@@ -189,6 +186,8 @@ public class SiteService {
             LOGGER.warn(e);
             throw new RuntimeException(e.getLocalizedMessage());
         } finally {
+            site.setStatusTime(LocalDateTime.now());
+            siteRepository.save(site);
             appState.setIndexing(false);
         }
     }

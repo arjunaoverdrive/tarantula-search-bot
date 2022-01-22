@@ -65,7 +65,7 @@ public class WebPageVisitorStarter implements Runnable {
                     saveSite(siteFromConfig, StatusEnum.INDEXED, "");
                 }
                 if (appState.isStopped()) {
-                    saveSite(siteFromConfig, StatusEnum.FAILED, "Indexing was interrupted");
+                    saveSite(siteFromConfig, StatusEnum.FAILED, "Индексация была остановлена");
                     LOGGER.error("Indexing was interrupted");
                 }
             } catch (Exception e) {
