@@ -1,6 +1,5 @@
 package main.app.pagevisitor;
 
-import main.app.DAO.IndexRepository;
 import main.app.DAO.LemmaRepository;
 import main.app.DAO.PageRepository;
 import main.app.DAO.SiteRepository;
@@ -12,6 +11,7 @@ import main.app.indexer.helpers.URLsStorage;
 import main.app.model.Site;
 import main.app.model.StatusEnum;
 import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -25,24 +25,24 @@ public class WebPageVisitorStarter implements Runnable {
     private final LemmaRepository lemmaRepository;
     private final PageRepository pageRepository;
     private final SiteRepository siteRepository;
-    private final Site siteFromConfig;
+    private final JdbcTemplate jdbcTemplate;
+    private final Site site;
     private final ConfigProperties props;
-    private final IndexRepository indexRepository;
     private final AppState appState;
 
-    public WebPageVisitorStarter(Site siteFromConfig,
+    public WebPageVisitorStarter(Site site,
                                  LemmaRepository lemmaRepository,
                                  PageRepository pageRepository,
                                  SiteRepository siteRepository,
+                                 JdbcTemplate jdbcTemplate,
                                  ConfigProperties props,
-                                 IndexRepository indexRepository,
                                  AppState appState) {
-        this.siteFromConfig = siteFromConfig;
+        this.site = site;
         this.lemmaRepository = lemmaRepository;
         this.pageRepository = pageRepository;
         this.siteRepository = siteRepository;
+        this.jdbcTemplate = jdbcTemplate;
         this.props = props;
-        this.indexRepository = indexRepository;
         this.appState = appState;
     }
 
@@ -60,16 +60,16 @@ public class WebPageVisitorStarter implements Runnable {
             try {
                 if (!appState.isStopped()) {
                     appState.setIndexing(true);
-                    WebPageVisitor visitor = initWebPageVisitor(siteFromConfig);
+                    WebPageVisitor visitor = initWebPageVisitor(site);
                     saveVisitorData(visitor);
-                    saveSite(siteFromConfig, StatusEnum.INDEXED, "");
+                    saveSite(site, StatusEnum.INDEXED, "");
                 }
                 if (appState.isStopped()) {
-                    saveSite(siteFromConfig, StatusEnum.FAILED, "Индексация была остановлена");
+                    saveSite(site, StatusEnum.FAILED, "Индексация была остановлена");
                     LOGGER.error("Indexing was interrupted");
                 }
             } catch (Exception e) {
-                saveSite(siteFromConfig, StatusEnum.FAILED, e.getLocalizedMessage());
+                saveSite(site, StatusEnum.FAILED, e.getLocalizedMessage());
                 LOGGER.error(e);
             } finally {
                 appState.setIndexing(false);
@@ -84,12 +84,17 @@ public class WebPageVisitorStarter implements Runnable {
         String root = site.getUrl();
 
         Node rootNode = new Node(root, root);
-        URLsStorage storage = new URLsStorage(root, pageRepository, siteRepository, props);
-        IndexHelper indexHelper = new IndexHelper();
+        URLsStorage storage = new URLsStorage(root, pageRepository, props);
+        IndexHelper indexHelper = new IndexHelper(jdbcTemplate);
         LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository);
 
-        return new WebPageVisitor(siteId, rootNode, siteRepository,
-                storage, lemmaHelper, indexHelper, appState);
+        return new WebPageVisitor(siteId,
+                rootNode,
+                siteRepository,
+                storage,
+                lemmaHelper,
+                indexHelper,
+                appState);
     }
 
     private void saveVisitorData(WebPageVisitor visitor) throws ConcurrentModificationException {
@@ -107,6 +112,4 @@ public class WebPageVisitorStarter implements Runnable {
         site.setLastError(lastError);
         siteRepository.save(site);
     }
-
-
 }

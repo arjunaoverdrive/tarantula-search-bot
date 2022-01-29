@@ -9,12 +9,6 @@ public class WordOnPage {
     public WordOnPage() {
     }
 
-    public WordOnPage(int position, String lemma, String word) {
-        this.position = position;
-        this.lemma = lemma;
-        this.word = word;
-    }
-
     public int getPosition() {
         return position;
     }
@@ -39,4 +33,12 @@ public class WordOnPage {
         this.word = word;
     }
 
+    @Override
+    public String toString() {
+        return "WordOnPage{" +
+                "position=" + position +
+                ", lemma='" + lemma + '\'' +
+                ", word='" + word + '\'' +
+                '}';
+    }
 }

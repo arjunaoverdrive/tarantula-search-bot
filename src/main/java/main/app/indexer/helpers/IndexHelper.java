@@ -1,9 +1,9 @@
 package main.app.indexer.helpers;
 
-import main.app.config.DbConnection;
 import main.app.indexer.IndexPrototype;
 import main.app.model.Index;
 import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -14,23 +14,25 @@ public class IndexHelper {
 
     private final List<Index> indices;
     private final List<IndexPrototype> prototypes;
-
+    private final JdbcTemplate template;
 
     private StringBuilder builder = new StringBuilder();
     private final static int BUILDER_SIZE = 2_980_000;
 
     private static final Logger LOGGER = Logger.getLogger(IndexHelper.class);
 
-    public IndexHelper() {
+
+    public IndexHelper(JdbcTemplate template) {
         this.indices = new ArrayList<>();
         this.prototypes = new ArrayList<>();
+        this.template = template;
     }
 
     public void addIndexPrototype(IndexPrototype ip) {
         prototypes.add(ip);
     }
 
-    public void saveIndicesToDb(Map<String, Integer> lemma2ID) throws SQLException {
+    public void convertPrototypes2Indices(Map<String, Integer> lemma2ID) throws SQLException {
         for (int i = 0; i < prototypes.size(); i++) {
             IndexPrototype ip = prototypes.get(i);
             int lemmaId = -1;
@@ -47,18 +49,19 @@ public class IndexHelper {
         doWrite(indices);
     }
 
-    public void doWrite(List<Index> indices) throws SQLException {
+    public void doWrite(List<Index> indices) {
         LOGGER.info("Starting saving indices");
         List<Index> indices2save = new ArrayList<>(indices);
         indices.clear();
-                    for (int i = 0; i < indices2save.size(); i++) {
-                Index index = indices2save.get(i);
-                builder.append("('" + index.getLemmaId() + "', '" + index.getPageId() + "', '" + index.getRank() + "'), ");
-                if (builder.length() >= BUILDER_SIZE || i == indices2save.size() - 1) {
-                    DbConnection.executeMultiInsert(builder.deleteCharAt(builder.lastIndexOf(",")));
-                    builder = new StringBuilder();
-                }
+        for (int i = 0; i < indices2save.size(); i++) {
+            Index index = indices2save.get(i);
+            builder.append("('" + index.getLemmaId() + "', '" + index.getPageId() + "', '" + index.getRank() + "'), ");
+            if (builder.length() >= BUILDER_SIZE || i == indices2save.size() - 1) {
+                template.execute("INSERT INTO `index`(lemma_id, page_id, `rank`) " +
+                        "VALUES " + builder.deleteCharAt(builder.lastIndexOf(",")));
+                builder = new StringBuilder();
             }
+        }
         LOGGER.info("Saved " + indices2save.size() + " indices");
         indices2save.clear();
     }

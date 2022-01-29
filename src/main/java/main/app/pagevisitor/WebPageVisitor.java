@@ -13,6 +13,7 @@ import org.jsoup.Connection;
 import org.jsoup.UnsupportedMimeTypeException;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
@@ -82,7 +83,7 @@ public class WebPageVisitor extends RecursiveAction {
         Page page;
         Connection connection = storage.getConnection(node.getPath());
         try {
-            page = storage.createPageObject(connection, siteId);
+            page = storage.createPageObject(connection, siteId, siteRepository);
         } catch (UnsupportedMimeTypeException e) {
             return;
         }
@@ -95,6 +96,9 @@ public class WebPageVisitor extends RecursiveAction {
         }
         if (storage.getBuffer().size() >= BUFFER_SIZE) {
             flushBufferToDb();
+            Site site = siteRepository.findById(siteId).get();
+            site.setStatusTime(LocalDateTime.now());
+            siteRepository.save(site);
         }
     }
 
@@ -130,7 +134,7 @@ public class WebPageVisitor extends RecursiveAction {
         Connection connection = storage.getConnection(site.getUrl());
         Page rootPage = null;
         try {
-            rootPage = storage.createPageObject(connection, siteId);
+            rootPage = storage.createPageObject(connection, siteId, siteRepository);
         } catch (UnsupportedMimeTypeException e) {
             LOGGER.info(e);
         }
@@ -141,7 +145,7 @@ public class WebPageVisitor extends RecursiveAction {
 
     void saveIndicesToDb() {
         try {
-            indexHelper.saveIndicesToDb(lemmaHelper.getLemma2ID());
+            indexHelper.convertPrototypes2Indices(lemmaHelper.getLemma2ID());
         } catch (SQLException e) {
             e.printStackTrace();
         }

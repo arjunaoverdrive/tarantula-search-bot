@@ -25,15 +25,15 @@ public class URLsStorage {
     private final Set<String> savedPagesPaths;
     private final Set<Page> buffer;
     private final PageRepository pageRepository;
-    private final SiteRepository siteRepository;
+
     private final ConfigProperties props;
     private final static Logger LOGGER = Logger.getLogger(URLsStorage.class);
 
 
-    public URLsStorage(String root, PageRepository pageRepository, SiteRepository siteRepository, ConfigProperties props) {
+    public URLsStorage(String root, PageRepository pageRepository, ConfigProperties props) {
         this.root = root;
         this.pageRepository = pageRepository;
-        this.siteRepository = siteRepository;
+
         this.buffer = new HashSet<>();
         this.children = new HashSet<>();
         this.savedPagesPaths = new HashSet<>();
@@ -77,12 +77,12 @@ public class URLsStorage {
         return savedPages;
     }
 
-    public Page createPageObject(Connection connection, int siteId) throws UnsupportedMimeTypeException {
+    public Page createPageObject(Connection connection, int siteId, SiteRepository siteRepository) throws UnsupportedMimeTypeException {
         Page page;
         Connection.Response response;
         try {
             response = connection.execute();
-            int statusCode = response.statusCode();
+            int statusCode =  response.statusCode();
             String path = URLDecoder.decode(response.url().getPath(), StandardCharsets.UTF_8);
             page = new Page(path, statusCode, response.body(), siteId);
         } catch (HttpStatusException hse) {

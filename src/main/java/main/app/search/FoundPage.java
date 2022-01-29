@@ -1,16 +1,26 @@
 package main.app.search;
 
 public class FoundPage {
+    private int siteId;
     private String uri;
     private String title;
     private String snippet;
     private float relevance;
 
-    public FoundPage(String uri, String title, String snippet, float relevance) {
+    public FoundPage(int siteId, String uri, String title, String snippet, float relevance) {
+        this.siteId = siteId;
         this.uri = uri;
         this.title = title;
         this.snippet = snippet;
         this.relevance = relevance;
+    }
+
+    public int getSiteId() {
+        return siteId;
+    }
+
+    public void setSiteId(int siteId) {
+        this.siteId = siteId;
     }
 
     public String getUri() {

@@ -1444,7 +1444,7 @@ table().init();
 var API = function(){
     function sendData(address, type, data, cb, $this) {
         $.ajax({
-            url: backendApiUrl + address,
+            url: backendApiUrl + "/api" + address,
             type: type,
             dataType: 'json',
             data: data,
@@ -1587,6 +1587,7 @@ var API = function(){
                     $('#totalSites').text(result.statistics.total.sites);
                     $('#totalPages').text(result.statistics.total.pages);
                     $('#totalLemmas').text(result.statistics.total.lemmas);
+                    $('select[name="site"] option').not(':first-child').remove();
                     result.statistics.detailed.forEach(function(site){
                         var $blockSiteExample = $('.Statistics-example').clone(true);
                         var statusClass = '';
@@ -1602,7 +1603,6 @@ var API = function(){
                                 break;
                             
                         }
-                        $('select[name="site"] option').not(':first-child').remove();
                         $('select[name="site"]').append('' +
                             '<option value="' + site.url + '">' +
                                 site.url +
@@ -1630,10 +1630,23 @@ var API = function(){
                         $statistics.append($blockSiteExample);
                         var $thisHideBlock = $statistics.find('.HideBlock').last();
                         $thisHideBlock.on('click', HideBlock().trigger);
-                        
-                        
-                        var height = $thisHideBlock.find('.Statistics-description').outerHeight();
-                        $thisHideBlock.find('.HideBlock-content').css('height', height + 40);
+
+
+                        $('.Tabs_column > .Tabs-wrap > .Tabs-block').each(function(){
+                            var $this = $(this);
+                            if ($this.is(':hidden')){
+                                $this.addClass('Tabs-block_update')
+                            };
+                        });
+                        $statistics.find('.HideBlock').each(function(){
+                            var $this = $(this);
+                            var height = $this.find('.Statistics-description').outerHeight();
+                            $this.find('.HideBlock-content').css('height', height + 40);
+                        });
+                        $('.Tabs_column > .Tabs-wrap > .Tabs-block_update').each(function(){
+                            var $this = $(this);
+                            $this.removeClass('Tabs-block_update')
+                        });
                     });
                     if (result.statistics.total.isIndexing) {
                         var $btnIndex = $('.btn[data-send="startIndexing"]'),
@@ -1645,6 +1658,7 @@ var API = function(){
                             .data('send', 'stopIndexing')
                             .data('alttext', text)
                             .addClass('btn_check')
+                        $('.UpdatePageBlock').hide(0)
                     }
     
                 } else {
@@ -1666,6 +1680,13 @@ var API = function(){
         if ($element.data('alttext')) {
             $element.find('.btn-content').text($element.data('alttext'));
             $element.data('alttext', text);
+        }
+        if ($element.data('send') == 'startIndexing' || $element.data('send') == 'stopIndexing'){
+            if (check) {
+                $('.UpdatePageBlock').show(0)
+            } else {
+                $('.UpdatePageBlock').hide(0)
+            }
         }
         check = !check;
         $element.data('check', check);
@@ -1771,7 +1792,7 @@ var HideBlock = function(){
     $HideBlock.each(function(){
         var $this = $(this);
         var $content = $this.find('.HideBlock-content');
-        $content.css('height', $content.outerHeight());//set 145
+        $content.css('height', $content.outerHeight());
         $this.addClass('HideBlock_CLOSE');
     });
     function clickHide (e){
@@ -1788,7 +1809,7 @@ var HideBlock = function(){
     return {
         init: function(){
             $trigger.on('click', clickHide);
-//             $HideBlock.eq(0).find($trigger).trigger('click');
+            // $HideBlock.eq(0).find($trigger).trigger('click');
         },
         trigger: clickHide
     };

@@ -10,14 +10,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class SnippetParser {
-    private String query;
-    private String html;
+    private final String query;
+    private final String html;
     private final LemmaCounter counter;
 
-    public SnippetParser(String query, String html) throws IOException {
+    public SnippetParser(String query, String html, LemmaCounter counter) throws IOException {
         this.query = query;
         this.html = html;
-        this.counter = new LemmaCounter();
+        this.counter = counter;
     }
 
     private List<String> getWordsList(String str) {
@@ -66,7 +66,9 @@ public class SnippetParser {
         List<WordOnPage> res = new ArrayList<>();
         for (String lemma : lemmasFromQuery) {
             WordOnPage w = getQueryWordOnPageObject(lemma);
-            res.add(w);
+            if(w != null) {
+                res.add(w);
+            }
         }
         return res;
     }
@@ -85,8 +87,8 @@ public class SnippetParser {
         String closeTag = "</b>";
         StringBuilder builder = new StringBuilder(html);
         for (WordOnPage w : words) {
-            builder.insert(w.getPosition() + w.getWord().length(), closeTag);
-            builder.insert(w.getPosition(), openTag);
+                builder.insert(w.getPosition() + w.getWord().length(), closeTag);
+                builder.insert(w.getPosition(), openTag);
         }
         return builder.toString();
     }
@@ -98,8 +100,8 @@ public class SnippetParser {
     }
 
     String shortenLongSnippet(String text) {
-        if (text.length() > 500) {
-            String[] sentences = text.split("[\\.\\?\\.{3}\\!]");
+        if (text.length() > 200) {
+            List<String> sentences = List.of(text.split("\\."));
             StringBuilder builder = new StringBuilder();
             for (String s : sentences) {
                 String string2append = s.contains("<b>") || s.contains("</b>") ? s + "..." : "";

@@ -51,10 +51,9 @@ public class StatisticsService {
     }
 
     public TotalStatistics getTotalStatistics() {
-        List<Site> sites = siteRepository.findAll();
-        int sitesCount = sites.size();
-        int pages = pageRepository.findAll().size();
-        int lemmas = lemmaRepository.findAll().size();
+        int sitesCount = (int) siteRepository.count();
+        int pages = (int) pageRepository.count();
+        int lemmas = (int) lemmaRepository.count();
         boolean isIndexing = appState.isIndexing();
         return new TotalStatistics(sitesCount, pages, lemmas, isIndexing);
     }

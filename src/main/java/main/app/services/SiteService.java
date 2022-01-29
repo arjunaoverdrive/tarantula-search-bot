@@ -1,11 +1,11 @@
 package main.app.services;
 
-import main.app.DAO.IndexRepository;
 import main.app.DAO.LemmaRepository;
 import main.app.DAO.PageRepository;
 import main.app.DAO.SiteRepository;
 import main.app.config.AppState;
 import main.app.config.ConfigProperties;
+import main.app.indexer.helpers.IndexHelper;
 import main.app.indexer.helpers.LemmaHelper;
 import main.app.indexer.helpers.URLsStorage;
 import main.app.model.*;
@@ -15,9 +15,11 @@ import org.apache.log4j.Logger;
 import org.jsoup.Connection;
 import org.jsoup.UnsupportedMimeTypeException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,7 +30,7 @@ public class SiteService {
     private final SiteRepository siteRepository;
     private final LemmaRepository lemmaRepository;
     private final PageRepository pageRepository;
-    private final IndexRepository indexRepository;
+    private final JdbcTemplate jdbcTemplate;
     private final ConfigProperties props;
     private final AppState appState;
 
@@ -38,25 +40,23 @@ public class SiteService {
     public SiteService(SiteRepository siteRepository,
                        LemmaRepository lemmaRepository,
                        PageRepository pageRepository,
-                       IndexRepository indexRepository,
+                       JdbcTemplate jdbcTemplate,
                        ConfigProperties props,
                        AppState appState) {
         this.siteRepository = siteRepository;
         this.lemmaRepository = lemmaRepository;
         this.pageRepository = pageRepository;
-        this.indexRepository = indexRepository;
+        this.jdbcTemplate = jdbcTemplate;
         this.props = props;
         this.appState = appState;
     }
 
-    private Set<ConfigProperties.Site> readSitesFromConfig() {
-        return props.getSites();
-    }
-
     public void saveSites() {
+        Set<ConfigProperties.Site>sitesFromConfig = readSitesFromConfig();
+        compareSitesInDbAndConfig(sitesFromConfig);
 
         LOGGER.info("Reading sites from config");
-        for (ConfigProperties.Site s : readSitesFromConfig()) {
+        for (ConfigProperties.Site s : sitesFromConfig) {
             if (appState.isStopped()) {                   //not to drop data for all sites if indexing is interrupted
                 break;
             }
@@ -68,6 +68,7 @@ public class SiteService {
             } else {
                 site = removeSiteDataFromDb(site);
             }
+
             WebPageVisitorStarter recursiveActionStarter = getWebPageVisitorThread(site);
             Thread t = new Thread(recursiveActionStarter);
             t.start();
@@ -78,36 +79,6 @@ public class SiteService {
             }
         }
     }
-
-    private WebPageVisitorStarter getWebPageVisitorThread(Site site2save) {
-        return new WebPageVisitorStarter(site2save, lemmaRepository, pageRepository, siteRepository,
-                props, indexRepository, appState);
-    }
-
-    private Site removeSiteDataFromDb(Site site) {
-        String siteName = site.getName();
-        appState.setIndexing(true);
-        site.setStatus(StatusEnum.INDEXING);
-        Site saved = siteRepository.save(site);
-        LOGGER.info("Starting indexing site " + siteName + ". Starting clearing site information");
-
-        int id = site.getId();
-        List<Lemma> lemmas2delete = lemmaRepository.findBySiteId(id);
-        lemmaRepository.deleteAll(lemmas2delete);
-        LOGGER.info("Cleared lemmas for site " + siteName);
-
-        List<Page> pages2delete = pageRepository.findBySiteId(id);
-        List<Integer> pageIds = pages2delete.stream().map(Page::getId).collect(Collectors.toList());
-        pageRepository.deleteAll(pages2delete);
-        LOGGER.info("Cleared pages for site " + siteName);
-
-        List<Index> indices2delete = indexRepository.findByPageIdIn(pageIds);
-        indexRepository.deleteAll(indices2delete);
-        LOGGER.info("Cleared indices for site " + siteName);
-        appState.setIndexing(false);
-        return saved;
-    }
-
 
     public ResultDto startReindexing() {
         if (appState.isIndexing()) {
@@ -150,11 +121,96 @@ public class SiteService {
                     appState.notify();
                 }
             } catch (Exception e) {
-                LOGGER.error(e);
+                LOGGER.error(e.getMessage());
                 return new ResultDto.Error(e.getLocalizedMessage());
             }
             return new ResultDto.Success();
         }
+    }
+
+    private void compareSitesInDbAndConfig(Set<ConfigProperties.Site> siteFromConfig){
+        List<Site> sitesFromDb = siteRepository.findAll();
+        List<String> siteFromConfigNames = siteFromConfig.stream().map(ConfigProperties.Site::getName)
+                .collect(Collectors.toList());
+        for(Site s : sitesFromDb){
+            if(!siteFromConfigNames.contains(s.getName())){
+                removeSiteDataFromDb(s);
+                removeSite(s);
+            }
+        }
+    }
+
+    private Set<ConfigProperties.Site> readSitesFromConfig() {
+        return props.getSites();
+    }
+
+
+    private WebPageVisitorStarter getWebPageVisitorThread(Site site2save) {
+        return new WebPageVisitorStarter(site2save,
+                lemmaRepository,
+                pageRepository,
+                siteRepository,
+                jdbcTemplate,
+                props,
+                appState);
+    }
+
+    private Site removeSiteDataFromDb(Site site) {
+        synchronized (appState) {
+            Site saved = null;
+            if(!appState.isIndexing()) {
+                String siteName = site.getName();
+                appState.setIndexing(true);
+                site.setStatus(StatusEnum.INDEXING);
+                site.setStatusTime(LocalDateTime.now());
+                saved = siteRepository.save(site);
+                LOGGER.info("Starting indexing site " + siteName + ". Starting clearing site information");
+
+                int id = site.getId();
+                removeSiteLemmas(id);
+                LOGGER.info("Cleared lemmas for site " + siteName);
+
+                List<Integer> pageIds = removeSitePages(id);
+                LOGGER.info("Cleared pages for site " + siteName);
+
+                removeSiteIndices(pageIds);
+                LOGGER.info("Cleared indices for site " + siteName);
+
+                appState.setIndexing(false);
+            }
+        return saved;
+        }
+    }
+
+    private void removeSiteLemmas(int siteId){
+        List<Lemma> lemmas2delete = lemmaRepository.findBySiteId(siteId);
+        lemmaRepository.deleteAll(lemmas2delete);
+    }
+
+    private List<Integer> removeSitePages(int siteId){
+        List<Page> pages2delete = pageRepository.findBySiteId(siteId);
+        List<Integer> pageIds = pages2delete.stream().map(Page::getId).collect(Collectors.toList());
+        pageRepository.deleteAll(pages2delete);
+        return pageIds;
+    }
+
+    private void removeSiteIndices(List<Integer> pageIds){
+        StringBuilder builder = new StringBuilder();
+        for(int i = 0; i < pageIds.size(); i++){
+            builder.append(pageIds.get(i));
+            if(i < pageIds.size() - 1){
+                builder.append(", ");
+            }
+        }
+        try {
+            jdbcTemplate.execute("DELETE from `index` WHERE page_id IN (" + builder.toString() + ")");
+        }catch (Exception e){
+            LOGGER.error(e.getLocalizedMessage());
+        }
+    }
+
+    private void removeSite(Site s){
+        siteRepository.delete(s);
     }
 
     private Site getSiteContainingUrl(String url) {
@@ -171,17 +227,20 @@ public class SiteService {
         appState.setIndexing(true);
 
         int siteId = site.getId();
-        URLsStorage storage = new URLsStorage(site.getUrl(), pageRepository, siteRepository, props);
+        URLsStorage storage = new URLsStorage(site.getUrl(), pageRepository,  props);
         Connection connection = storage.getConnection(pageUrl);
 
         try {
-            Page page = storage.createPageObject(connection, siteId);
+            Page page = storage.createPageObject(connection, siteId, siteRepository);
             if (page.getCode() != 200) {
                 throw new RuntimeException("Страница недоступна");
             }
             persistPageData(page, siteId);
         } catch (UnsupportedMimeTypeException e) {
-            LOGGER.info(e);
+            LOGGER.info(e.getLocalizedMessage());
+        } catch (UnsupportedOperationException e){
+            LOGGER.warn(e);
+            throw new RuntimeException("Контент страницы недоступен");
         } catch (Exception e) {
             LOGGER.warn(e);
             throw new RuntimeException(e.getLocalizedMessage());
@@ -208,7 +267,7 @@ public class SiteService {
     }
 
     private List<Lemma> persistLemmas(Page page, LemmaHelper lemmaHelper, List<Lemma> lemmasFromDb) {
-        if (page.getCode() != 200) {
+        if (page.getCode() != 200 ) {
             return new ArrayList<>();
         }
         List<Map<String, Integer>> lemmasFromTitleNBody = lemmaHelper.convertTitleNBody2stringMaps(page.getContent());
@@ -249,24 +308,34 @@ public class SiteService {
 
 
     private void persistIndices(List<Lemma> savedLemmas, LemmaHelper lemmaHelper, Page page) {
+        if(page.getCode() != 200) throw new RuntimeException("Page with empty content " + page.getPath());
         int pageId = page.getId();
         List<Map<String, Integer>> lemmasFromTitleNBody = lemmaHelper.convertTitleNBody2stringMaps(page.getContent());
         List<Index> indices = new ArrayList<>();
+        IndexHelper indexHelper = new IndexHelper(jdbcTemplate);
 
         for (Lemma l : savedLemmas) {
             float rank = lemmaHelper.getWeightForLemma(l.getLemma(), lemmasFromTitleNBody);
             Index i = new Index(l.getId(), pageId, rank);
             indices.add(i);
         }
-        indexRepository.saveAll(indices);
-        LOGGER.info("Saved " + indices.size() + " indices");
+        indexHelper.doWrite(indices);
     }
 
 
     private List<Lemma> clearDataForPageInCaseOfDuplication(Page page) {
         int id = page.getId();
-        List<Index> indices = indexRepository.findByPageId(id);
-        indexRepository.deleteAll(indices);
+        String sql = "SELECT * from `index` WHERE page_id = " + id;
+
+        List<Index> indices =
+                jdbcTemplate.query(sql, (ResultSet rs, int rowNum) -> {
+                    Index index = new Index();
+                    index.setPageId(id);
+                    index.setLemmaId(rs.getInt("lemma_id"));
+                    index.setRank(rs.getFloat("rank"));
+                    return index;
+                });
+        jdbcTemplate.execute("DELETE from `index` WHERE page_id =" + id);
         LOGGER.info("Deleted " + indices.size() + " indices for page " + page.getPath());
         List<Integer> lemmaIds = indices.stream().map(Index::getLemmaId).collect(Collectors.toList());
         indices.clear();
