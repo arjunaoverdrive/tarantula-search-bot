@@ -124,10 +124,13 @@ public class SearchHelper {
 
     private List<Integer> getPageIdsByLemmaId() {
         List<Integer> pageIds = new ArrayList<>();
-        int count = getStringSet().size();
         Map<Integer, Integer> page2count = getPage2CountMap();
+
+        Optional<Integer> optional = page2count.values().stream().max(Integer::compareTo);
+        int count = optional.orElse(0);
+
         for (Map.Entry<Integer, Integer> e : page2count.entrySet()) {
-            if (e.getValue() == count) {
+            if (Objects.equals(e.getValue(), count) && count != 0) {
                 pageIds.add(e.getKey());
             }
         }

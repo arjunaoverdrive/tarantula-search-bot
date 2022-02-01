@@ -43,8 +43,8 @@ public class StatisticsService {
         TotalStatistics total = getTotalStatistics();
         List<SiteDto> sites = getSiteDtos() == null ? new ArrayList<>() : getSiteDtos();
         if(sites.size() == 0){
-            siteService.saveSites();
             LOGGER.info("Initial indexing. Sites count " + sites.size());
+            siteService.saveSites();
         }
         StatisticsDto stats = new StatisticsDto(total, sites);
         return new StatisticsDtoWrapper(true, stats);

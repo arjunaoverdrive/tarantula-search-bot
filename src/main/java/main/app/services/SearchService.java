@@ -72,12 +72,13 @@ public class SearchService {
 
         List<Site> sites = siteRepository.findAll();
         List<SearchResultDto> results = new ArrayList<>();
-        for(Site s : sites){
-            try {
+        try {
+
+            for (Site s : sites) {
                 results.addAll(doSearchOnOneSite(query, s.getUrl()));
-            } catch (Exception e) {
-                return new SearchDto.Error(e.getLocalizedMessage());
             }
+        }catch (RuntimeException e){
+            return new SearchDto.Error(e.getLocalizedMessage());
         }
 
         if(results.size() == 0){
