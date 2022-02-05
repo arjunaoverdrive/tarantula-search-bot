@@ -1,6 +1,7 @@
 package main.app.services;
 
 import main.app.DAO.SiteRepository;
+import main.app.config.AppState;
 import main.app.model.Site;
 import main.app.search.FoundPage;
 import main.app.search.SearchCache;
@@ -24,29 +25,32 @@ public class SearchService {
     private final JdbcTemplate jdbcTemplate;
     private boolean cached;
     private final SearchCache cache;
+    private final AppState appState;
     private static final Logger LOGGER = Logger.getLogger(SearchService.class);
 
+
     @Autowired
-    public SearchService(SiteRepository siteRepository, JdbcTemplate jdbcTemplate) {
+    public SearchService(SiteRepository siteRepository, JdbcTemplate jdbcTemplate, AppState appState) {
         this.siteRepository = siteRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.appState = appState;
         this.cached = false;
         this.cache = new SearchCache();
     }
 
     public SearchDto doSearch(String query, String siteUrl, int offset, int limit) {
-        if(siteUrl == null) {
-            return doSearch(query, offset, limit);
-        }
+        long start = System.currentTimeMillis();
 
-        if(cached && query.equals(cache.getLastQuery()) && siteUrl.equals(cache.getSite())){
+        String url = siteUrl == null ? "all" : siteUrl;
+
+        if(cached && query.equals(cache.getLastQuery()) && url.equals(cache.getSite())){
             return new SearchDto.Success(cache.getCacheCollection().size(),
                     sortResultsByRelevance(cache.getCacheCollection(), limit, offset));
         }
-
+        int siteId = siteUrl == null ? -1 : siteRepository.findByUrl(siteUrl).getId();
         List<SearchResultDto> results;
         try {
-            results = doSearchOnOneSite(query, siteUrl);
+            results = performSearch(query, siteId);
         } catch (Exception e) {
             return new SearchDto.Error(e.getLocalizedMessage());
         }
@@ -57,54 +61,30 @@ public class SearchService {
             limit = 20;
         }
         List<SearchResultDto> data = sortResultsByRelevance(results, limit, offset);
-        setCacheValues(query, siteUrl, results);
+        setCacheValues(query, url, results);
+
+        LOGGER.info("Doing search took " + (System.currentTimeMillis() - start));
 
         return new SearchDto.Success(results.size(), data);
     }
 
 
-
-    private SearchDto doSearch(String query, int offset, int limit){
-        if(cached && cache.getLastQuery().equals(query) && cache.getSite().equals("all")){
-            return new SearchDto.Success(cache.getCacheCollection().size(),
-                    sortResultsByRelevance(cache.getCacheCollection(), limit, offset));
+    private List<SearchResultDto> performSearch(String query, int siteId)  {
+        if(appState.isIndexing()){
+            throw new RuntimeException("Выполняется индексация, поиск временно недоступен");
         }
-
-        List<Site> sites = siteRepository.findAll();
-        List<SearchResultDto> results = new ArrayList<>();
-        try {
-
-            for (Site s : sites) {
-                results.addAll(doSearchOnOneSite(query, s.getUrl()));
-            }
-        }catch (RuntimeException e){
-            return new SearchDto.Error(e.getLocalizedMessage());
-        }
-
-        if(results.size() == 0){
-            return new SearchDto.Error("По данному запросу ничего не найдено: " + query);
-        }
-
-        if(limit == 0){
-            limit = 20;
-        }
-        List<SearchResultDto> data = sortResultsByRelevance(results, limit, offset);
-        setCacheValues(query, "all", results);
-        return new SearchDto.Success(results.size(), data);
-    }
-
-    private List<SearchResultDto> doSearchOnOneSite(String query, String siteUrl)  {
         if(query.isEmpty()){
             throw new RuntimeException("Задан пустой поисковый запрос");
         }
 
-        Site s = siteRepository.findByUrl(siteUrl);
-        List<FoundPage> foundPages = getFoundPages(query, s.getId());
+        List<FoundPage> foundPages = getFoundPages(query, siteId);
 
         List<SearchResultDto> results = new ArrayList<>();
         for (FoundPage fp : foundPages) {
+            int foundPageSiteId = fp.getSiteId();
+            Site fromDb = siteRepository.findById(foundPageSiteId).get();
             SearchResultDto srd = new SearchResultDto(
-                    siteUrl, s.getName(), fp.getUri(),
+                    fromDb.getUrl(), fromDb.getName(), fp.getUri(),
                     fp.getTitle(), fp.getSnippet(), fp.getRelevance());
             results.add(srd);
         }

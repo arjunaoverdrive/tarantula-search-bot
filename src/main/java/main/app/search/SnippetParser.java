@@ -41,8 +41,7 @@ public class SnippetParser {
         return wordOnPageList;
     }
 
-    private List<String> getListOfQueryLemmas() {
-        List<String> wordsFromQuery = getWordsList(query);
+    private List<String> getListOfQueryLemmas(List<String> wordsFromQuery) {
         List<String> words = new ArrayList<>();
         for (String s : wordsFromQuery) {
             words.add(counter.getBasicForm(s));
@@ -61,12 +60,12 @@ public class SnippetParser {
         return target;
     }
 
-    private List<WordOnPage> getQueryWordsOnPageList() {
-        List<String> lemmasFromQuery = getListOfQueryLemmas();
+    private List<WordOnPage> getQueryWordsOnPageList(List<String> wordsFromQuery) {
+        List<String> lemmasFromQuery = getListOfQueryLemmas(wordsFromQuery);
         List<WordOnPage> res = new ArrayList<>();
         for (String lemma : lemmasFromQuery) {
             WordOnPage w = getQueryWordOnPageObject(lemma);
-            if(w != null) {
+            if (w != null) {
                 res.add(w);
             }
         }
@@ -74,7 +73,8 @@ public class SnippetParser {
     }
 
     private List<WordOnPage> sortByPositionDesc() {
-        List<WordOnPage> queryWordsOnPageList = getQueryWordsOnPageList();
+        List<String> wordsFromQuery = getWordsList(query);
+        List<WordOnPage> queryWordsOnPageList = getQueryWordsOnPageList(wordsFromQuery);
         return queryWordsOnPageList.stream()
                 .sorted(Comparator.comparing(WordOnPage::getPosition).reversed())
                 .collect(Collectors.toList());
@@ -87,8 +87,8 @@ public class SnippetParser {
         String closeTag = "</b>";
         StringBuilder builder = new StringBuilder(html);
         for (WordOnPage w : words) {
-                builder.insert(w.getPosition() + w.getWord().length(), closeTag);
-                builder.insert(w.getPosition(), openTag);
+            builder.insert(w.getPosition() + w.getWord().length(), closeTag);
+            builder.insert(w.getPosition(), openTag);
         }
         return builder.toString();
     }
@@ -100,15 +100,12 @@ public class SnippetParser {
     }
 
     String shortenLongSnippet(String text) {
-        if (text.length() > 200) {
-            List<String> sentences = List.of(text.split("\\."));
-            StringBuilder builder = new StringBuilder();
-            for (String s : sentences) {
-                String string2append = s.contains("<b>") || s.contains("</b>") ? s + "..." : "";
-                builder.append(string2append);
-            }
-            return builder.toString();
+        StringBuilder builder = new StringBuilder();
+        List<String> sentences = List.of(text.split("\\."));
+        for (String s : sentences) {
+            String string2append = s.contains("<b>") || s.contains("</b>") ? s + "..." : "";
+            builder.append(string2append);
         }
-        return text;
+        return builder.toString();
     }
 }
