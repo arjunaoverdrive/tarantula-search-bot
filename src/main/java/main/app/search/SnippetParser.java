@@ -80,7 +80,6 @@ public class SnippetParser {
                 .collect(Collectors.toList());
     }
 
-
     private String addBoldTag() {
         List<WordOnPage> words = sortByPositionDesc();
         String openTag = "<b>";
@@ -108,4 +107,5 @@ public class SnippetParser {
         }
         return builder.toString();
     }
+
 }

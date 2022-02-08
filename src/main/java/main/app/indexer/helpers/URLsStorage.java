@@ -33,7 +33,6 @@ public class URLsStorage {
     public URLsStorage(String root, PageRepository pageRepository, ConfigProperties props) {
         this.root = root;
         this.pageRepository = pageRepository;
-
         this.buffer = new HashSet<>();
         this.children = new HashSet<>();
         this.savedPagesPaths = new HashSet<>();
@@ -73,7 +72,8 @@ public class URLsStorage {
         }catch (Exception e){
            LOGGER.error(e + " " + root);
         }
-        LOGGER.info("Successfully saved " + savedPages.size() + " pages; count " + (savedPagesPaths.size()) + " site " + root);
+        LOGGER.info("Successfully saved " + savedPages.size() + " pages; " +
+                "count " + (savedPagesPaths.size()) + " site " + root);
         return savedPages;
     }
 
@@ -100,8 +100,6 @@ public class URLsStorage {
         }
         return page;
     }
-
-
 
     private String getUserAgent() {
         return props.getUserAgent();

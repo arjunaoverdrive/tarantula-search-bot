@@ -24,18 +24,37 @@ public class SiteController {
     public ResponseEntity startIndexing(){
         ResultDto result =
             siteService.startReindexing();
-        return ResponseEntity.status(HttpStatus.OK).body(result);
+        if(result.isResult()) {
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+        } else {
+            ResultDto.Error error = (ResultDto.Error)result;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 
     @GetMapping(value = "/api/stopIndexing")
     public ResponseEntity stopIndexing(){
         ResultDto result = siteService.stopIndexing();
-        return ResponseEntity.status(HttpStatus.OK).body(result);
+        if(result.isResult()) {
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+        } else {
+            ResultDto.Error error = (ResultDto.Error)result;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 
     @PostMapping(value = "/api/indexPage")
     public ResponseEntity indexPage(@RequestParam String url){
+        if(url.isEmpty()){
+            ResultDto.Error error = new ResultDto.Error("Задана пустая страница");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
         ResultDto result = siteService.indexPage(url);
-        return ResponseEntity.status(HttpStatus.OK).body(result);
+        if(result.isResult()) {
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+        } else {
+            ResultDto.Error error = (ResultDto.Error) result;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 }

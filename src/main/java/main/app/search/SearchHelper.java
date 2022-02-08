@@ -72,12 +72,6 @@ public class SearchHelper {
         return new HashSet<>(lemmas);
     }
 
-    //todo create a class to store the output data for the following sql query:
-    // SELECT  i.page_id as page_id, count(page_id) as page_count, l.id as lemma_id, l.frequency as frequency, l.site_id as site_id, i.`rank` as `rank`
-    //	from lemma l join `index` i on l.id = i.lemma_id
-    //    where lemma_id in (753, 12407, 24296, 33381, 11275, 23104, 26098, 39158) group by page_id having count(page_id) = 2 ORDER BY page_count desc;
-    //fields: int page_id, int lemma_id, int frequency, int site_id, float rank
-
     private int getMaxFrequency(int siteId) {
         long start = System.currentTimeMillis();
         String sql = "SELECT count(id) as `count` FROM page WHERE site_id = " + siteId;
@@ -98,7 +92,9 @@ public class SearchHelper {
         float threshold = getMaxFrequency(siteId) * 0.5f;
         Set<Lemma> lemmas = getLemmas();
         List<Lemma> res = lemmas.stream()
-                .filter(lemma -> lemma.getFrequency() < threshold && lemma.getFrequency() != 0)
+                .filter(lemma -> lemma.getFrequency() < threshold
+                        && lemma.getFrequency() != 0
+                && lemma.getSiteId() == siteId)
                 .collect(Collectors.toList());
         LOGGER.info("ignoreFrequentLemmas " + (System.currentTimeMillis() - start));
         return res;
@@ -129,7 +125,7 @@ public class SearchHelper {
             ids.add(l.getId());
         }
         LOGGER.info("getLemmasIds " + (System.currentTimeMillis() - start));
-        return ids.stream().sorted().collect(Collectors.toList());
+        return ids;
     }
 
     private String createSqlToGetPagesContainingLemmas(Set<Integer> lemmaIds) {
@@ -170,7 +166,7 @@ public class SearchHelper {
         int count = optional.orElse(0);
 
         for (Map.Entry<Integer, Integer> e : page2count.entrySet()) {
-            if (e.getValue() == count  && count != 0) {
+            if (e.getValue() - count >= -1 && count != 0) {
                 pageIds.add(e.getKey());
             }
         }
@@ -180,7 +176,7 @@ public class SearchHelper {
 
     private String createSqlToGetIndices() throws PagesNotFoundException {
         long start = System.currentTimeMillis();
-        Set<Integer> lemmaIds = new HashSet( getLemmasIds());
+        Set<Integer> lemmaIds = new HashSet(getLemmasIds());
         List<Integer> pageIds = getPageIdsByLemmaId(lemmaIds);
         if (pageIds.size() == 0) {
             throw new PagesNotFoundException("По данному запросу ничего не найдено: " + query);

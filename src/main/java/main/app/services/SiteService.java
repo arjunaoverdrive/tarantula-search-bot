@@ -1,5 +1,6 @@
 package main.app.services;
 
+import main.app.DAO.FieldRepository;
 import main.app.DAO.LemmaRepository;
 import main.app.DAO.PageRepository;
 import main.app.DAO.SiteRepository;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 @Service
 public class SiteService {
 
+    private final FieldRepository fieldRepository;
     private final SiteRepository siteRepository;
     private final LemmaRepository lemmaRepository;
     private final PageRepository pageRepository;
@@ -37,12 +39,13 @@ public class SiteService {
     private static final Logger LOGGER = Logger.getLogger(SiteService.class);
 
     @Autowired
-    public SiteService(SiteRepository siteRepository,
+    public SiteService(FieldRepository fieldRepository, SiteRepository siteRepository,
                        LemmaRepository lemmaRepository,
                        PageRepository pageRepository,
                        JdbcTemplate jdbcTemplate,
                        ConfigProperties props,
                        AppState appState) {
+        this.fieldRepository = fieldRepository;
         this.siteRepository = siteRepository;
         this.lemmaRepository = lemmaRepository;
         this.pageRepository = pageRepository;
@@ -146,7 +149,10 @@ public class SiteService {
 
 
     private WebPageVisitorStarter getWebPageVisitorThread(Site site2save) {
-        return new WebPageVisitorStarter(site2save,
+        List<Field>fields = getFields();
+        return new WebPageVisitorStarter(
+                site2save,
+                fields,
                 lemmaRepository,
                 pageRepository,
                 siteRepository,
@@ -223,7 +229,7 @@ public class SiteService {
         return site;
     }
 
-    private void persistPage(Site site, String pageUrl) {
+    private void persistPage(Site site, String pageUrl) throws NullPointerException{
         appState.setIndexing(true);
 
         int siteId = site.getId();
@@ -240,10 +246,10 @@ public class SiteService {
             LOGGER.info(e.getLocalizedMessage());
         } catch (UnsupportedOperationException e){
             LOGGER.warn(e);
-            throw new RuntimeException("Контент страницы недоступен");
+            throw new NullPointerException("Контент страницы недоступен");
         } catch (Exception e) {
             LOGGER.warn(e);
-            throw new RuntimeException(e.getLocalizedMessage());
+            throw new NullPointerException(e.getLocalizedMessage());
         } finally {
             site.setStatusTime(LocalDateTime.now());
             siteRepository.save(site);
@@ -260,22 +266,22 @@ public class SiteService {
             lemmasFromDb = clearDataForPageInCaseOfDuplication(pageFromDb);
         }
         Page savedPage = pageRepository.save(page);
+        int pageId = savedPage.getId();
 
-        LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository);
-        List<Lemma> savedLemmas = persistLemmas(savedPage, lemmaHelper, lemmasFromDb);
-        persistIndices(savedLemmas, lemmaHelper, savedPage);
+        List<Field>fields = getFields();
+        LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository, fields);
+        Map<String, Float>lemmasFromPageContent = lemmaHelper.calculateWeightForAllLemmasOnPage(page.getContent());
+        List<Lemma> savedLemmas = persistLemmas(savedPage, lemmasFromDb, lemmasFromPageContent);
+        persistIndices(savedLemmas, lemmasFromPageContent, pageId);
     }
 
-    private List<Lemma> persistLemmas(Page page, LemmaHelper lemmaHelper, List<Lemma> lemmasFromDb) {
+    private List<Lemma> persistLemmas(Page page,  List<Lemma> lemmasFromDb,
+                                      Map<String, Float> lemmasFromPageContent) {
         if (page.getCode() != 200 ) {
             return new ArrayList<>();
         }
-        List<Map<String, Integer>> lemmasFromTitleNBody = lemmaHelper.convertTitleNBody2stringMaps(page.getContent());
 
-        Set<String> strings = new HashSet<>();
-        for (Map<String, Integer> map : lemmasFromTitleNBody) {
-            strings.addAll(map.keySet());
-        }
+        Set<String> strings = lemmasFromPageContent.keySet();
 
         int siteId = page.getSiteId();
         List<Lemma> lemmasFromPage = new ArrayList<>();
@@ -307,15 +313,15 @@ public class SiteService {
     }
 
 
-    private void persistIndices(List<Lemma> savedLemmas, LemmaHelper lemmaHelper, Page page) {
-        if(page.getCode() != 200) throw new RuntimeException("Page with empty content " + page.getPath());
-        int pageId = page.getId();
-        List<Map<String, Integer>> lemmasFromTitleNBody = lemmaHelper.convertTitleNBody2stringMaps(page.getContent());
+    private void persistIndices(List<Lemma> savedLemmas, Map<String, Float> lemmasFromPageContent,
+                                 int pageId) {
+
         List<Index> indices = new ArrayList<>();
         IndexHelper indexHelper = new IndexHelper(jdbcTemplate);
 
         for (Lemma l : savedLemmas) {
-            float rank = lemmaHelper.getWeightForLemma(l.getLemma(), lemmasFromTitleNBody);
+            String lemma = l.getLemma();
+            float rank = lemmasFromPageContent.get(lemma);
             Index i = new Index(l.getId(), pageId, rank);
             indices.add(i);
         }
@@ -352,4 +358,7 @@ public class SiteService {
         return allLemmasById;
     }
 
+    private List<Field> getFields(){
+        return fieldRepository.findAll();
+    }
 }

@@ -57,9 +57,7 @@ public class SearchService {
         if(results.size() == 0){
             return new SearchDto.Error("По данному запросу ничего не найдено: " + query);
         }
-        if(limit == 0){
-            limit = 20;
-        }
+        limit = limit == 0 ? 20 : limit;
         List<SearchResultDto> data = sortResultsByRelevance(results, limit, offset);
         setCacheValues(query, url, results);
 
@@ -72,9 +70,6 @@ public class SearchService {
     private List<SearchResultDto> performSearch(String query, int siteId)  {
         if(appState.isIndexing()){
             throw new RuntimeException("Выполняется индексация, поиск временно недоступен");
-        }
-        if(query.isEmpty()){
-            throw new RuntimeException("Задан пустой поисковый запрос");
         }
 
         List<FoundPage> foundPages = getFoundPages(query, siteId);

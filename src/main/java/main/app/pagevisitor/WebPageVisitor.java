@@ -27,9 +27,7 @@ public class WebPageVisitor extends RecursiveAction {
     private final IndexHelper indexHelper;
     private final AppState appState;
 
-
     private static final Logger LOGGER = Logger.getLogger(WebPageVisitor.class);
-
     private static final int BUFFER_SIZE = 100;
 
     public WebPageVisitor(int siteId, Node node, SiteRepository siteRepository, URLsStorage storage,
@@ -91,7 +89,7 @@ public class WebPageVisitor extends RecursiveAction {
             storage.addPage2Buffer(page);
             if (page.getCode() == 200) {
                 lemmaHelper.addLemmasCache(
-                        lemmaHelper.convertTitleNBody2stringMaps(page.getContent()));
+                        lemmaHelper.calculateWeightForAllLemmasOnPage(page.getContent()));
             }
         }
         if (storage.getBuffer().size() >= BUFFER_SIZE) {
@@ -106,17 +104,10 @@ public class WebPageVisitor extends RecursiveAction {
         if (p.getCode() == 200) {
             int pageId = p.getId();
             String html = p.getContent();
-            List<Map<String, Integer>> maps =
-                    lemmaHelper.convertTitleNBody2stringMaps(html);
-            Set<String> lemmas = new HashSet<>();
-            try {
-                lemmas = lemmaHelper.getStringsFromPageBlocks(maps);
-            } catch (NullPointerException npe) {
-                LOGGER.warn(p.getPath() + " " + npe);
-            }
-            for (String s : lemmas) {
-                float rank = lemmaHelper.getWeightForLemma(s, maps);
-                IndexPrototype ip = new IndexPrototype(pageId, s, rank);
+            Map<String, Float>word2weight = lemmaHelper.calculateWeightForAllLemmasOnPage(html);
+
+            for (Map.Entry<String, Float> e : word2weight.entrySet()) {
+                IndexPrototype ip = new IndexPrototype(pageId, e.getKey(), e.getValue());
                 indexHelper.addIndexPrototype(ip);
             }
         }
@@ -140,7 +131,11 @@ public class WebPageVisitor extends RecursiveAction {
         }
         storage.addPageURL(site.getUrl());
         storage.addPage2Buffer(rootPage);
-        lemmaHelper.addLemmasCache(lemmaHelper.convertTitleNBody2stringMaps(rootPage.getContent()));
+        String pageContent = rootPage.getContent();
+        if (pageContent == null) {
+            throw new RuntimeException("Ошибка индексации: главная страница сайта недоступна");
+        }
+        lemmaHelper.addLemmasCache(lemmaHelper.calculateWeightForAllLemmasOnPage(pageContent));
     }
 
     void saveIndicesToDb() {
@@ -154,4 +149,5 @@ public class WebPageVisitor extends RecursiveAction {
     void saveLemmas() {
         lemmaHelper.writeLemmasToDb();
     }
+
 }

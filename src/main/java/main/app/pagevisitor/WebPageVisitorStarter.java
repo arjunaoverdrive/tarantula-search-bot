@@ -8,6 +8,7 @@ import main.app.config.ConfigProperties;
 import main.app.indexer.helpers.IndexHelper;
 import main.app.indexer.helpers.LemmaHelper;
 import main.app.indexer.helpers.URLsStorage;
+import main.app.model.Field;
 import main.app.model.Site;
 import main.app.model.StatusEnum;
 import org.apache.log4j.Logger;
@@ -16,12 +17,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ConcurrentModificationException;
+import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 public class WebPageVisitorStarter implements Runnable {
 
     private static final Logger LOGGER = Logger.getLogger(WebPageVisitorStarter.class);
-
+    private final List<Field>fields;
     private final LemmaRepository lemmaRepository;
     private final PageRepository pageRepository;
     private final SiteRepository siteRepository;
@@ -31,6 +33,7 @@ public class WebPageVisitorStarter implements Runnable {
     private final AppState appState;
 
     public WebPageVisitorStarter(Site site,
+                                 List<Field> fields,
                                  LemmaRepository lemmaRepository,
                                  PageRepository pageRepository,
                                  SiteRepository siteRepository,
@@ -38,6 +41,7 @@ public class WebPageVisitorStarter implements Runnable {
                                  ConfigProperties props,
                                  AppState appState) {
         this.site = site;
+        this.fields = fields;
         this.lemmaRepository = lemmaRepository;
         this.pageRepository = pageRepository;
         this.siteRepository = siteRepository;
@@ -86,9 +90,10 @@ public class WebPageVisitorStarter implements Runnable {
         Node rootNode = new Node(root, root);
         URLsStorage storage = new URLsStorage(root, pageRepository, props);
         IndexHelper indexHelper = new IndexHelper(jdbcTemplate);
-        LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository);
+        LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository, fields);
 
-        return new WebPageVisitor(siteId,
+        return new WebPageVisitor(
+                siteId,
                 rootNode,
                 siteRepository,
                 storage,

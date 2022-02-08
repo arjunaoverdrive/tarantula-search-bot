@@ -19,6 +19,9 @@ sites:
   -
     url: https://nikoartgallery.com
     name: Галерея искусств Niko
-  -
-    url: https://ipfran.ru
-    name: ИПФ РАН
+#  -
+#    url: https://ipfran.ru
+#    name: ИПФ РАН
+#  -
+#    url: https://volochek.life
+#    name: Информационный портал города Вышний Волочек
