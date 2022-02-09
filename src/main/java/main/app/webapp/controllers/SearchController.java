@@ -23,20 +23,8 @@ public class SearchController {
                                  @RequestParam(required = false) String site,
                                  @RequestParam(required = false) int offset,
                                  @RequestParam(required = false) int limit) {
-        SearchDto result = null;
-        if(query.isEmpty()){
-            SearchDto.Error error = new SearchDto.Error("Задан пустой поисковый запрос");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-        }
-        try {
-            result = searchService.doSearch(query, site, offset, limit);
-            if(result.isResult()) {
-                return ResponseEntity.status(HttpStatus.OK).body(result);
-            } SearchDto.Error error = (SearchDto.Error) result;
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e);
-        }
+        SearchDto result = searchService.doSearch(query, site, offset, limit);
+        return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
 }

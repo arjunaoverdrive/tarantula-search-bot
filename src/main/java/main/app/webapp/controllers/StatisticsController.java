@@ -17,7 +17,6 @@ public class StatisticsController {
     @Autowired
     public StatisticsController( StatisticsService statisticsService ) {
         this.statisticsService = statisticsService;
-
     }
 
     @GetMapping("/api/statistics")

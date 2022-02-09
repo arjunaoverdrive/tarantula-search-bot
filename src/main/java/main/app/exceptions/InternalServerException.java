@@ -1,10 +1,11 @@
 package main.app.exceptions;
 
-public class PagesNotFoundException extends NullPointerException {
+public class InternalServerException extends RuntimeException{
     private String message;
-    public PagesNotFoundException(String s) {
+
+    public InternalServerException(String message) {
         super();
-        this.message  = s;
+        this.message = message;
     }
 
     @Override

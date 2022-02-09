@@ -6,6 +6,8 @@ import main.app.DAO.PageRepository;
 import main.app.DAO.SiteRepository;
 import main.app.config.AppState;
 import main.app.config.ConfigProperties;
+import main.app.exceptions.InternalServerException;
+import main.app.exceptions.PagesNotFoundException;
 import main.app.indexer.helpers.IndexHelper;
 import main.app.indexer.helpers.LemmaHelper;
 import main.app.indexer.helpers.URLsStorage;
@@ -55,7 +57,7 @@ public class SiteService {
     }
 
     public void saveSites() {
-        Set<ConfigProperties.Site>sitesFromConfig = readSitesFromConfig();
+        Set<ConfigProperties.Site> sitesFromConfig = readSitesFromConfig();
         compareSitesInDbAndConfig(sitesFromConfig);
 
         LOGGER.info("Reading sites from config");
@@ -85,32 +87,31 @@ public class SiteService {
 
     public ResultDto startReindexing() {
         if (appState.isIndexing()) {
-            return new ResultDto.Error("Индексация уже запущена");
+            throw new RuntimeException("Индексация уже запущена");
         }
-        try {
-            appState.setStopped(false);
-            saveSites();
-            return new ResultDto.Success();
-        } catch (Exception e) {
-            LOGGER.error(e.getLocalizedMessage());
-            return new ResultDto.Error(e.getLocalizedMessage());
-        }
+        appState.setStopped(false);
+        saveSites();
+        return new ResultDto();
     }
 
     public ResultDto stopIndexing() {
         if (!appState.isIndexing() || appState.isStopped()) {
-            return new ResultDto.Error("Индексация не запущена");
+            throw new RuntimeException("Индексация не запущена");
         }
         appState.setStopped(true);
-        return new ResultDto.Success();
+        return new ResultDto();
 
     }
 
-    public ResultDto indexPage(String url) {
+    public ResultDto indexPage(String url) throws PagesNotFoundException, IllegalArgumentException, InternalServerException {
         Site site = getSiteContainingUrl(url);
+        if (url.isEmpty()) {
+            appState.setIndexing(false);
+            throw new IllegalArgumentException("Задана пустая страница");
+        }
         if (site == null) {
             appState.setIndexing(false);
-            return new ResultDto.Error("Данная страница находится за пределами сайтов, " +
+            throw new PagesNotFoundException("Данная страница находится за пределами сайтов, " +
                     "указанных в конфигурационном файле");
         }
 
@@ -123,20 +124,20 @@ public class SiteService {
                     persistPage(site, url);
                     appState.notify();
                 }
-            } catch (Exception e) {
+            } catch (IOException | InterruptedException e) {
                 LOGGER.error(e.getMessage());
-                return new ResultDto.Error(e.getLocalizedMessage());
+                throw new InternalServerException(e.getMessage());
             }
-            return new ResultDto.Success();
+            return new ResultDto();
         }
     }
 
-    private void compareSitesInDbAndConfig(Set<ConfigProperties.Site> siteFromConfig){
+    private void compareSitesInDbAndConfig(Set<ConfigProperties.Site> siteFromConfig) {
         List<Site> sitesFromDb = siteRepository.findAll();
         List<String> siteFromConfigNames = siteFromConfig.stream().map(ConfigProperties.Site::getName)
                 .collect(Collectors.toList());
-        for(Site s : sitesFromDb){
-            if(!siteFromConfigNames.contains(s.getName())){
+        for (Site s : sitesFromDb) {
+            if (!siteFromConfigNames.contains(s.getName())) {
                 removeSiteDataFromDb(s);
                 removeSite(s);
             }
@@ -149,7 +150,7 @@ public class SiteService {
 
 
     private WebPageVisitorStarter getWebPageVisitorThread(Site site2save) {
-        List<Field>fields = getFields();
+        List<Field> fields = getFields();
         return new WebPageVisitorStarter(
                 site2save,
                 fields,
@@ -164,11 +165,12 @@ public class SiteService {
     private Site removeSiteDataFromDb(Site site) {
         synchronized (appState) {
             Site saved = null;
-            if(!appState.isIndexing()) {
+            if (!appState.isIndexing()) {
                 String siteName = site.getName();
                 appState.setIndexing(true);
                 site.setStatus(StatusEnum.INDEXING);
                 site.setStatusTime(LocalDateTime.now());
+                site.setLastError("");
                 saved = siteRepository.save(site);
                 LOGGER.info("Starting indexing site " + siteName + ". Starting clearing site information");
 
@@ -184,38 +186,38 @@ public class SiteService {
 
                 appState.setIndexing(false);
             }
-        return saved;
+            return saved;
         }
     }
 
-    private void removeSiteLemmas(int siteId){
+    private void removeSiteLemmas(int siteId) {
         List<Lemma> lemmas2delete = lemmaRepository.findBySiteId(siteId);
         lemmaRepository.deleteAll(lemmas2delete);
     }
 
-    private List<Integer> removeSitePages(int siteId){
+    private List<Integer> removeSitePages(int siteId) {
         List<Page> pages2delete = pageRepository.findBySiteId(siteId);
         List<Integer> pageIds = pages2delete.stream().map(Page::getId).collect(Collectors.toList());
         pageRepository.deleteAll(pages2delete);
         return pageIds;
     }
 
-    private void removeSiteIndices(List<Integer> pageIds){
+    private void removeSiteIndices(List<Integer> pageIds) {
         StringBuilder builder = new StringBuilder();
-        for(int i = 0; i < pageIds.size(); i++){
+        for (int i = 0; i < pageIds.size(); i++) {
             builder.append(pageIds.get(i));
-            if(i < pageIds.size() - 1){
+            if (i < pageIds.size() - 1) {
                 builder.append(", ");
             }
         }
         try {
             jdbcTemplate.execute("DELETE from `index` WHERE page_id IN (" + builder.toString() + ")");
-        }catch (Exception e){
+        } catch (Exception e) {
             LOGGER.error(e.getLocalizedMessage());
         }
     }
 
-    private void removeSite(Site s){
+    private void removeSite(Site s) {
         siteRepository.delete(s);
     }
 
@@ -229,27 +231,27 @@ public class SiteService {
         return site;
     }
 
-    private void persistPage(Site site, String pageUrl) throws NullPointerException{
+    private void persistPage(Site site, String pageUrl) throws PagesNotFoundException, IOException {
         appState.setIndexing(true);
 
         int siteId = site.getId();
-        URLsStorage storage = new URLsStorage(site.getUrl(), pageRepository,  props);
+        URLsStorage storage = new URLsStorage(site.getUrl(), pageRepository, props);
         Connection connection = storage.getConnection(pageUrl);
 
         try {
             Page page = storage.createPageObject(connection, siteId, siteRepository);
             if (page.getCode() != 200) {
-                throw new RuntimeException("Страница недоступна");
+                throw new PagesNotFoundException("Страница недоступна");
             }
             persistPageData(page, siteId);
         } catch (UnsupportedMimeTypeException e) {
             LOGGER.info(e.getLocalizedMessage());
-        } catch (UnsupportedOperationException e){
+        } catch (UnsupportedOperationException e) {
             LOGGER.warn(e);
-            throw new NullPointerException("Контент страницы недоступен");
-        } catch (Exception e) {
+            throw new PagesNotFoundException("Контент страницы недоступен");
+        } catch (IOException e) {
             LOGGER.warn(e);
-            throw new NullPointerException(e.getLocalizedMessage());
+            throw new IOException(e.getLocalizedMessage());
         } finally {
             site.setStatusTime(LocalDateTime.now());
             siteRepository.save(site);
@@ -268,16 +270,16 @@ public class SiteService {
         Page savedPage = pageRepository.save(page);
         int pageId = savedPage.getId();
 
-        List<Field>fields = getFields();
+        List<Field> fields = getFields();
         LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository, fields);
-        Map<String, Float>lemmasFromPageContent = lemmaHelper.calculateWeightForAllLemmasOnPage(page.getContent());
+        Map<String, Float> lemmasFromPageContent = lemmaHelper.calculateWeightForAllLemmasOnPage(page.getContent());
         List<Lemma> savedLemmas = persistLemmas(savedPage, lemmasFromDb, lemmasFromPageContent);
         persistIndices(savedLemmas, lemmasFromPageContent, pageId);
     }
 
-    private List<Lemma> persistLemmas(Page page,  List<Lemma> lemmasFromDb,
+    private List<Lemma> persistLemmas(Page page, List<Lemma> lemmasFromDb,
                                       Map<String, Float> lemmasFromPageContent) {
-        if (page.getCode() != 200 ) {
+        if (page.getCode() != 200) {
             return new ArrayList<>();
         }
 
@@ -314,7 +316,7 @@ public class SiteService {
 
 
     private void persistIndices(List<Lemma> savedLemmas, Map<String, Float> lemmasFromPageContent,
-                                 int pageId) {
+                                int pageId) {
 
         List<Index> indices = new ArrayList<>();
         IndexHelper indexHelper = new IndexHelper(jdbcTemplate);
@@ -358,7 +360,7 @@ public class SiteService {
         return allLemmasById;
     }
 
-    private List<Field> getFields(){
+    private List<Field> getFields() {
         return fieldRepository.findAll();
     }
 }

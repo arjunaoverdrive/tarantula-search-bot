@@ -2,6 +2,7 @@ package main.app.services;
 
 import main.app.DAO.SiteRepository;
 import main.app.config.AppState;
+import main.app.exceptions.PagesNotFoundException;
 import main.app.model.Site;
 import main.app.search.FoundPage;
 import main.app.search.SearchCache;
@@ -38,24 +39,25 @@ public class SearchService {
         this.cache = new SearchCache();
     }
 
-    public SearchDto doSearch(String query, String siteUrl, int offset, int limit) {
+    public SearchDto doSearch(String query, String siteUrl, int offset, int limit) throws IllegalArgumentException, RuntimeException, PagesNotFoundException {
         long start = System.currentTimeMillis();
 
         String url = siteUrl == null ? "all" : siteUrl;
+        if (query.isEmpty()) {
+            throw new IllegalArgumentException("Задан пустой поисковый запрос");
+        }
 
-        if(cached && query.equals(cache.getLastQuery()) && url.equals(cache.getSite())){
-            return new SearchDto.Success(cache.getCacheCollection().size(),
+        if (cached && query.equals(cache.getLastQuery()) && url.equals(cache.getSite())) {
+            return new SearchDto(cache.getCacheCollection().size(),
                     sortResultsByRelevance(cache.getCacheCollection(), limit, offset));
         }
         int siteId = siteUrl == null ? -1 : siteRepository.findByUrl(siteUrl).getId();
         List<SearchResultDto> results;
-        try {
-            results = performSearch(query, siteId);
-        } catch (Exception e) {
-            return new SearchDto.Error(e.getLocalizedMessage());
-        }
-        if(results.size() == 0){
-            return new SearchDto.Error("По данному запросу ничего не найдено: " + query);
+
+        results = performSearch(query, siteId);
+
+        if (results.size() == 0) {
+            throw new PagesNotFoundException("По данному запросу ничего не найдено: " + query);
         }
         limit = limit == 0 ? 20 : limit;
         List<SearchResultDto> data = sortResultsByRelevance(results, limit, offset);
@@ -63,15 +65,14 @@ public class SearchService {
 
         LOGGER.info("Doing search took " + (System.currentTimeMillis() - start));
 
-        return new SearchDto.Success(results.size(), data);
+        return new SearchDto(results.size(), data);
     }
 
 
-    private List<SearchResultDto> performSearch(String query, int siteId)  {
-        if(appState.isIndexing()){
+    private List<SearchResultDto> performSearch(String query, int siteId) {
+        if (appState.isIndexing()) {
             throw new RuntimeException("Выполняется индексация, поиск временно недоступен");
         }
-
         List<FoundPage> foundPages = getFoundPages(query, siteId);
 
         List<SearchResultDto> results = new ArrayList<>();
@@ -87,8 +88,8 @@ public class SearchService {
         return results;
     }
 
-    private List<SearchResultDto> sortResultsByRelevance(List<SearchResultDto> results, int limit, int offset){
-         return results.stream()
+    private List<SearchResultDto> sortResultsByRelevance(List<SearchResultDto> results, int limit, int offset) {
+        return results.stream()
                 .distinct()
                 .sorted(Comparator.comparing(SearchResultDto::getRelevance).reversed())
                 .skip(offset)
@@ -96,7 +97,7 @@ public class SearchService {
                 .collect(Collectors.toList());
     }
 
-    private List<FoundPage> getFoundPages(String query, int siteId)  {
+    private List<FoundPage> getFoundPages(String query, int siteId) {
         SearchHelper helper = null;
         try {
             helper = new SearchHelper(query, siteId, jdbcTemplate);
@@ -106,7 +107,7 @@ public class SearchService {
         return helper.getFoundPages();
     }
 
-    private void setCacheValues(String query, String site, List<SearchResultDto>results){
+    private void setCacheValues(String query, String site, List<SearchResultDto> results) {
         cache.setLastQuery(query);
         cache.setSite(site);
         cache.setCacheCollection(results);
