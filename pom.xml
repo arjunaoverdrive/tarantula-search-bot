@@ -49,6 +49,34 @@
             <version>9.0.0</version>
         </dependency>
 
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene.morphology/russian -->
+		<dependency>
+			<groupId>org.apache.lucene.morphology</groupId>
+			<artifactId>russian</artifactId>
+			<version>1.1</version>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene.morphology/morph -->
+		<dependency>
+			<groupId>org.apache.lucene.morphology</groupId>
+			<artifactId>morph</artifactId>
+			<version>1.1</version>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene.morphology/english -->
+		<dependency>
+			<groupId>org.apache.lucene.morphology</groupId>
+			<artifactId>english</artifactId>
+			<version>1.1</version>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene.morphology/morphology -->
+		<dependency>
+			<groupId>org.apache.lucene.morphology</groupId>
+			<artifactId>morphology</artifactId>
+			<version>1.1</version>
+			<type>pom</type>
+		</dependency>
 
         <!-- https://mvnrepository.com/artifact/org.flywaydb/flyway-mysql -->
         <dependency>
