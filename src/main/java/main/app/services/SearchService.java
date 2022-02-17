@@ -2,7 +2,6 @@ package main.app.services;
 
 import main.app.DAO.SiteRepository;
 import main.app.config.AppState;
-import main.app.exceptions.PagesNotFoundException;
 import main.app.model.Site;
 import main.app.search.FoundPage;
 import main.app.search.SearchCache;
@@ -39,7 +38,7 @@ public class SearchService {
         this.cache = new SearchCache();
     }
 
-    public SearchDto doSearch(String query, String siteUrl, int offset, int limit) throws IllegalArgumentException, RuntimeException, PagesNotFoundException {
+    public SearchDto doSearch(String query, String siteUrl, int offset, int limit) {
         long start = System.currentTimeMillis();
 
         String url = siteUrl == null ? "all" : siteUrl;
@@ -57,7 +56,7 @@ public class SearchService {
         results = performSearch(query, siteId);
 
         if (results.size() == 0) {
-            throw new PagesNotFoundException("По данному запросу ничего не найдено: " + query);
+            throw new NullPointerException("По данному запросу ничего не найдено: " + query);
         }
         limit = limit == 0 ? 20 : limit;
         List<SearchResultDto> data = sortResultsByRelevance(results, limit, offset);

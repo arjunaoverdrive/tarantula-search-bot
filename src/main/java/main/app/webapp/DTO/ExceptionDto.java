@@ -1,22 +1,22 @@
 package main.app.webapp.DTO;
 
 public class ExceptionDto {
-    private final boolean result = false;
-    private String message;
+    private String error;
 
-    public ExceptionDto(String message) {
-        this.message = message;
+    public ExceptionDto(String error) {
+        this.error = error;
     }
 
     public boolean isResult() {
+        boolean result = false;
         return result;
     }
 
-    public String getMessage() {
-        return message;
+    public String getError() {
+        return error;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setError(String error) {
+        this.error = error;
     }
 }

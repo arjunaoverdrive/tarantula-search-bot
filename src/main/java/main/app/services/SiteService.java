@@ -6,8 +6,6 @@ import main.app.DAO.PageRepository;
 import main.app.DAO.SiteRepository;
 import main.app.config.AppState;
 import main.app.config.ConfigProperties;
-import main.app.exceptions.InternalServerException;
-import main.app.exceptions.PagesNotFoundException;
 import main.app.indexer.helpers.IndexHelper;
 import main.app.indexer.helpers.LemmaHelper;
 import main.app.indexer.helpers.URLsStorage;
@@ -24,7 +22,10 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -103,7 +104,7 @@ public class SiteService {
 
     }
 
-    public ResultDto indexPage(String url) throws PagesNotFoundException, IllegalArgumentException, InternalServerException {
+    public ResultDto indexPage(String url) throws Exception {
         Site site = getSiteContainingUrl(url);
         if (url.isEmpty()) {
             appState.setIndexing(false);
@@ -111,7 +112,7 @@ public class SiteService {
         }
         if (site == null) {
             appState.setIndexing(false);
-            throw new PagesNotFoundException("Данная страница находится за пределами сайтов, " +
+            throw new NullPointerException("Данная страница находится за пределами сайтов, " +
                     "указанных в конфигурационном файле");
         }
 
@@ -126,7 +127,7 @@ public class SiteService {
                 }
             } catch (IOException | InterruptedException e) {
                 LOGGER.error(e.getMessage());
-                throw new InternalServerException(e.getMessage());
+                throw new Exception(e.getMessage());
             }
             return new ResultDto();
         }
@@ -181,9 +182,10 @@ public class SiteService {
                 List<Integer> pageIds = removeSitePages(id);
                 LOGGER.info("Cleared pages for site " + siteName);
 
-                removeSiteIndices(pageIds);
-                LOGGER.info("Cleared indices for site " + siteName);
-
+                if (pageIds.size() != 0) {
+                    removeSiteIndices(pageIds);
+                    LOGGER.info("Cleared indices for site " + siteName);
+                }
                 appState.setIndexing(false);
             }
             return saved;
@@ -231,7 +233,7 @@ public class SiteService {
         return site;
     }
 
-    private void persistPage(Site site, String pageUrl) throws PagesNotFoundException, IOException {
+    private void persistPage(Site site, String pageUrl) throws IOException {
         appState.setIndexing(true);
 
         int siteId = site.getId();
@@ -241,14 +243,14 @@ public class SiteService {
         try {
             Page page = storage.createPageObject(connection, siteId, siteRepository);
             if (page.getCode() != 200) {
-                throw new PagesNotFoundException("Страница недоступна");
+                throw new NullPointerException("Страница недоступна");
             }
             persistPageData(page, siteId);
         } catch (UnsupportedMimeTypeException e) {
             LOGGER.info(e.getLocalizedMessage());
         } catch (UnsupportedOperationException e) {
             LOGGER.warn(e);
-            throw new PagesNotFoundException("Контент страницы недоступен");
+            throw new NullPointerException("Контент страницы недоступен");
         } catch (IOException e) {
             LOGGER.warn(e);
             throw new IOException(e.getLocalizedMessage());

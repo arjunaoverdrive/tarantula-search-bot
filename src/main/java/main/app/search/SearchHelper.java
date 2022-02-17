@@ -1,6 +1,5 @@
 package main.app.search;
 
-import main.app.exceptions.PagesNotFoundException;
 import main.app.lemmatizer.LemmaCounter;
 import main.app.model.Index;
 import main.app.model.Lemma;
@@ -83,7 +82,7 @@ public class SearchHelper {
 
     private List<Lemma> ignoreFrequentLemmas(int siteId) {
         long start = System.currentTimeMillis();
-        float threshold = getMaxFrequency(siteId) * 0.5f;
+        float threshold = getMaxFrequency(siteId) * 0.3f;
         Set<Lemma> lemmas = getLemmas();
         List<Lemma> res = lemmas.stream()
                 .filter(lemma -> lemma.getFrequency() < threshold
@@ -160,11 +159,11 @@ public class SearchHelper {
         return pageIds;
     }
 
-    private String createSqlToGetIndices() throws PagesNotFoundException {
+    private String createSqlToGetIndices() {
         Set<Integer> lemmaIds = new HashSet(getLemmasIds());
         List<Integer> pageIds = getPageIdsByLemmaId(lemmaIds);
         if (pageIds.size() == 0) {
-            throw new PagesNotFoundException("По данному запросу ничего не найдено: " + query);
+            throw new NullPointerException("По данному запросу ничего не найдено: " + query);
         }
         StringBuilder sql = new StringBuilder("SELECT lemma_id, page_id, `rank` FROM `index` WHERE lemma_id IN (");
         for (Integer lemmaId : lemmaIds) {
@@ -180,7 +179,7 @@ public class SearchHelper {
         return sql.toString();
     }
 
-    private List<Index> getIndices() throws PagesNotFoundException {
+    private List<Index> getIndices() {
         String sql = createSqlToGetIndices();
         List<Index> indices = new ArrayList<>();
         try {
@@ -197,7 +196,7 @@ public class SearchHelper {
         return indices;
     }
 
-    private Map<Integer, Float> countAbsoluteRelevanceForPages() throws PagesNotFoundException {
+    private Map<Integer, Float> countAbsoluteRelevanceForPages() {
         List<Index> indices = getIndices();
         Map<Integer, Float> res = indices.stream()
                 .collect(Collectors.toMap(Index::getPageId, Index::getRank, Float::sum, HashMap::new));
@@ -212,7 +211,7 @@ public class SearchHelper {
         return maxRelevance;
     }
 
-    private Map<Integer, Float> calculateRelevanceForPages() throws PagesNotFoundException {
+    private Map<Integer, Float> calculateRelevanceForPages()  {
         Map<Integer, Float> page2absRelevance = countAbsoluteRelevanceForPages();
         Set<Integer> ids = page2absRelevance.keySet();
         Map<Integer, Float> page2relevance = new HashMap<>();
@@ -225,7 +224,7 @@ public class SearchHelper {
         return page2relevance;
     }
 
-    private String createQuery2getPagesList(Map<Integer, Float> page2relevance) throws PagesNotFoundException {
+    private String createQuery2getPagesList(Map<Integer, Float> page2relevance) {
         Set<Integer> pagesIds = page2relevance.keySet();
         StringBuilder sql = new StringBuilder("SELECT DISTINCT id, path, content, site_id FROM page WHERE id IN (");
         for (int id : pagesIds) {
@@ -253,7 +252,7 @@ public class SearchHelper {
 
                 return p;
             });
-        } catch (PagesNotFoundException e) {
+        } catch (NullPointerException e) {
             LOGGER.info(e.getMessage());
         };
         return foundPages;
@@ -316,7 +315,7 @@ public class SearchHelper {
         Map<Integer, Float> page2rel;
         try {
             page2rel = calculateRelevanceForPages();
-        } catch (PagesNotFoundException e) {
+        } catch (NullPointerException e) {
             LOGGER.info(e.getMessage());
             return new ArrayList<>();
         }

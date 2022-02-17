@@ -33,7 +33,7 @@ public class SiteController {
     }
 
     @PostMapping(value = "/api/indexPage")
-    public ResponseEntity indexPage(@RequestParam String url) {
+    public ResponseEntity indexPage(@RequestParam String url) throws Exception {
         ResultDto result = siteService.indexPage(url);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
