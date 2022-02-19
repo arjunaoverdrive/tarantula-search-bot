@@ -40,37 +40,44 @@
         </plugins>
     </build>
 
+    <repositories>
+        <repository>
+            <id>project.local</id>
+            <name>project</name>
+            <url>file:${project.basedir}/repo</url>
+        </repository>
+    </repositories>
+
     <dependencies>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.lucene.morphology</groupId>-->
+<!--            <artifactId>dictionary-reader</artifactId>-->
+<!--            <version>1.5</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>org.apache.lucene.morphology</groupId>
-            <artifactId>dictionary-reader</artifactId>
-            <version>1.5</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.lucene.morphology</groupId>-->
+<!--            <artifactId>english</artifactId>-->
+<!--            <version>1.5</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>org.apache.lucene.morphology</groupId>
-            <artifactId>english</artifactId>
-            <version>1.5</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.lucene.morphology</groupId>-->
+<!--            <artifactId>morph</artifactId>-->
+<!--            <version>1.5</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>org.apache.lucene.morphology</groupId>
-            <artifactId>morph</artifactId>
-            <version>1.5</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.lucene.morphology</groupId>-->
+<!--            <artifactId>morphology</artifactId>-->
+<!--            <version>1.5</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>org.apache.lucene.morphology</groupId>
-            <artifactId>morphology</artifactId>
-            <version>1.5</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.lucene.morphology</groupId>
-            <artifactId>russian</artifactId>
-            <version>1.5</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.lucene.morphology</groupId>-->
+<!--            <artifactId>russian</artifactId>-->
+<!--            <version>1.5</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>log4j</groupId>
