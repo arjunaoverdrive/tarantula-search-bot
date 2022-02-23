@@ -28,7 +28,7 @@ public class WebPageVisitor extends RecursiveAction {
     private final AppState appState;
 
     private static final Logger LOGGER = Logger.getLogger(WebPageVisitor.class);
-    private static final int BUFFER_SIZE = 100;
+//    private static final int BUFFER_SIZE = 100;
 
     public WebPageVisitor(int siteId, Node node, SiteRepository siteRepository, URLsStorage storage,
                           LemmaHelper lemmaHelper, IndexHelper indexHelper,
@@ -92,13 +92,15 @@ public class WebPageVisitor extends RecursiveAction {
                         lemmaHelper.calculateWeightForAllLemmasOnPage(page.getContent()));
             }
         }
-        if (storage.getBuffer().size() >= BUFFER_SIZE) {
+        int bufferMaxSize = storage.getBufferMaxSize();
+        if (storage.getBuffer().size() >= bufferMaxSize) {
             flushBufferToDb();
             Site site = siteRepository.findById(siteId).get();
             site.setStatusTime(LocalDateTime.now());
             siteRepository.save(site);
         }
     }
+
 
     private void createIndexPrototypesForPage(Page p) {
         if (p.getCode() == 200) {

@@ -105,6 +105,10 @@ public class URLsStorage {
         return props.getUserAgent();
     }
 
+    public int getBufferMaxSize(){
+        return props.getBufferSize();
+    }
+
     public Connection getConnection(String path) {
         String userAgent = getUserAgent();
         return Jsoup.connect(path).userAgent(userAgent).referrer("http://www.google.com");

@@ -13,6 +13,8 @@ public class ConfigProperties {
 
     private Set<Site> sites;
 
+    private int bufferSize;
+
     public void setSites(Set<Site> sites) {
         this.sites = sites;
     }
@@ -27,6 +29,14 @@ public class ConfigProperties {
 
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
+    }
+
+    public int getBufferSize() {
+        return bufferSize;
+    }
+
+    public void setBufferSize(int bufferSize) {
+        this.bufferSize = bufferSize;
     }
 
     public static class Site{
