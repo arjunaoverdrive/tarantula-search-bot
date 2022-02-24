@@ -46,8 +46,8 @@ public class SearchService {
             throw new IllegalArgumentException("Задан пустой поисковый запрос");
         }
 
-        if (cached && query.equals(cache.getLastQuery()) && url.equals(cache.getSite())) {
-            return new SearchDto(cache.getCacheCollection().size(),
+        if(cached && query.equals(cache.getLastQuery()) && url.equals(cache.getSite())){
+            return new SearchDto.Success(cache.getCacheCollection().size(),
                     sortResultsByRelevance(cache.getCacheCollection(), limit, offset));
         }
         int siteId = siteUrl == null ? -1 : siteRepository.findByUrl(siteUrl).getId();
@@ -56,7 +56,7 @@ public class SearchService {
         results = performSearch(query, siteId);
 
         if (results.size() == 0) {
-            throw new NullPointerException("По данному запросу ничего не найдено: " + query);
+            return new SearchDto.Error("По данному запросу ничего не найдено: " + query);
         }
         limit = limit == 0 ? 20 : limit;
         List<SearchResultDto> data = sortResultsByRelevance(results, limit, offset);
@@ -64,7 +64,7 @@ public class SearchService {
 
         LOGGER.info("Doing search took " + (System.currentTimeMillis() - start));
 
-        return new SearchDto(results.size(), data);
+        return new SearchDto.Success(results.size(), data);
     }
 
 

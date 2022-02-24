@@ -81,7 +81,6 @@ public class SearchHelper {
     }
 
     private List<Lemma> ignoreFrequentLemmas(int siteId) {
-        long start = System.currentTimeMillis();
         float threshold = getMaxFrequency(siteId) * 0.3f;
         Set<Lemma> lemmas = getLemmas();
         List<Lemma> res = lemmas.stream()
@@ -89,7 +88,6 @@ public class SearchHelper {
                         && lemma.getFrequency() != 0
                 && lemma.getSiteId() == siteId)
                 .collect(Collectors.toList());
-        LOGGER.info("ignoreFrequentLemmas " + (System.currentTimeMillis() - start));
         return res;
     }
 
@@ -141,6 +139,7 @@ public class SearchHelper {
             return page2count.compute(id, (k, v) -> (v == null) ? 1 : v + 1);
         });
 
+        LOGGER.info("Found " + page2count.size() + " pages containing lemma");
         return page2count;
     }
 
@@ -193,6 +192,7 @@ public class SearchHelper {
         } catch (Exception e) {
             LOGGER.error(e);
         }
+        LOGGER.info("Found " + indices.size() + " indices");
         return indices;
     }
 
