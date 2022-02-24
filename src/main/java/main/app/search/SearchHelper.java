@@ -198,6 +198,7 @@ public class SearchHelper {
 
     private Map<Integer, Float> countAbsoluteRelevanceForPages() {
         List<Index> indices = getIndices();
+        LOGGER.warn("Found " + indices.size() + " indices");
         Map<Integer, Float> res = indices.stream()
                 .collect(Collectors.toMap(Index::getPageId, Index::getRank, Float::sum, HashMap::new));
         return res;
@@ -208,6 +209,7 @@ public class SearchHelper {
                 .stream()
                 .max(Float::compareTo)
                 .get();
+        LOGGER.warn("Max relevance " + maxRelevance);
         return maxRelevance;
     }
 
