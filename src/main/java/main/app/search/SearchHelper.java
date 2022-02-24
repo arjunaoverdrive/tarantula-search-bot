@@ -313,12 +313,12 @@ public class SearchHelper {
     public List<FoundPage> getFoundPages() {
         List<FoundPage> foundPages = new ArrayList<>();
         Map<Integer, Float> page2rel;
-        try {
+//        try {
             page2rel = calculateRelevanceForPages();
-        } catch (NullPointerException e) {
-            LOGGER.info(e.getMessage());
-            return new ArrayList<>();
-        }
+//        } catch (NullPointerException e) {
+//            LOGGER.info(e.getMessage());
+//            return new ArrayList<>();
+//        }
         List<Page> pages = getPages(page2rel);
         for (Page p : pages) {
             int siteId = p.getSiteId();
