@@ -51,6 +51,7 @@
                         </configuration>
                     </execution>
                 </executions>
+
             </plugin>
             <plugin>
                 <groupId>com.heroku.sdk</groupId>
