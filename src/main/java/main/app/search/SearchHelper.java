@@ -161,9 +161,9 @@ public class SearchHelper {
     private String createSqlToGetIndices() {
         Set<Integer> lemmaIds = new HashSet(getLemmasIds());
         List<Integer> pageIds = getPageIdsByLemmaId(lemmaIds);
-        if (pageIds.size() == 0) {
-            throw new NullPointerException("По данному запросу ничего не найдено: " + query);
-        }
+//        if (pageIds.size() == 0) {
+//            throw new NullPointerException("По данному запросу ничего не найдено: " + query);
+//        }
         StringBuilder sql = new StringBuilder("SELECT lemma_id, page_id, `rank` FROM `index` WHERE lemma_id IN (");
         for (Integer lemmaId : lemmaIds) {
             sql.append(lemmaId).append(", ");
