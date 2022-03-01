@@ -51,7 +51,7 @@ public class SearchHelper {
     }
 
     private Set<Lemma> getLemmas() {
-        List<Lemma> lemmas = new ArrayList<>();
+        List<Lemma> lemmas;
         String sql = createSqlToGetLemmas();
         if (sql.isEmpty()) {
             return new HashSet<>();
@@ -64,6 +64,9 @@ public class SearchHelper {
             l.setSite(rs.getInt("site_id"));
             return l;
         });
+        if (lemmas.size() == 0){
+                throw new NullPointerException("No lemmas found.");
+        }
         return new HashSet<>(lemmas);
     }
 
@@ -113,9 +116,6 @@ public class SearchHelper {
         List<Integer> ids = new ArrayList<>();
         for (Lemma l : lemmas) {
             ids.add(l.getId());
-        }
-        if(ids.size() == 0){
-            throw new NullPointerException("No lemmas ids found.");
         }
         return ids;
     }
