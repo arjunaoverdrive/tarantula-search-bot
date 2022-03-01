@@ -65,7 +65,7 @@ public class SearchHelper {
             return l;
         });
         if (lemmas.size() == 0){
-                throw new NullPointerException("No lemmas found.");
+            throw new NullPointerException("No lemmas found. SQL: " + sql + "Query " + query);
         }
         return new HashSet<>(lemmas);
     }
