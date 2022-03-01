@@ -192,13 +192,11 @@ public class SearchHelper {
         } catch (Exception e) {
             LOGGER.error(e);
         }
-        LOGGER.info("Found " + indices.size() + " indices");
         return indices;
     }
 
     private Map<Integer, Float> countAbsoluteRelevanceForPages() {
         List<Index> indices = getIndices();
-        LOGGER.warn("Found " + indices.size() + " indices");
         Map<Integer, Float> res = indices.stream()
                 .collect(Collectors.toMap(Index::getPageId, Index::getRank, Float::sum, HashMap::new));
         return res;
@@ -209,7 +207,6 @@ public class SearchHelper {
                 .stream()
                 .max(Float::compareTo)
                 .get();
-        LOGGER.warn("Max relevance " + maxRelevance);
         return maxRelevance;
     }
 
@@ -276,10 +273,10 @@ public class SearchHelper {
 
         List<Element> elements = body.getAllElements();
         List<String> filtered = elements.stream()
-                .filter(e -> !e.is("head"))
+//                .filter(e -> !e.is("head"))
                 .filter(e -> !e.is("nav"))
                 .filter(e -> !children.contains(e))
-                .filter(Element::hasText)
+//                .filter(Element::hasText)
                 .map(Element::ownText)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());

@@ -241,7 +241,7 @@ public class SiteService {
         Connection connection = storage.getConnection(pageUrl);
 
         try {
-            Page page = storage.createPageObject(connection, siteId, siteRepository);
+            Page page = storage.createPageObject(connection, siteId);
             if (page.getCode() != 200) {
                 throw new NullPointerException("Страница недоступна");
             }

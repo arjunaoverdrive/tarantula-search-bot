@@ -103,7 +103,6 @@ public class WebPageVisitorStarter implements Runnable {
     }
 
     private void saveVisitorData(WebPageVisitor visitor) throws ConcurrentModificationException {
-        visitor.saveRootPage();
         ForkJoinPool fjp = new ForkJoinPool();
         fjp.invoke(visitor);
         visitor.flushBufferToDb();

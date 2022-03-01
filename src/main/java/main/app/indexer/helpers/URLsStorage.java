@@ -1,10 +1,8 @@
 package main.app.indexer.helpers;
 
 import main.app.DAO.PageRepository;
-import main.app.DAO.SiteRepository;
 import main.app.config.ConfigProperties;
 import main.app.model.Page;
-import main.app.model.Site;
 import org.apache.log4j.Logger;
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
@@ -69,25 +67,26 @@ public class URLsStorage {
         List<Page> savedPages = null;
         try {
             savedPages = pageRepository.saveAll(pageSet);
-        }catch (Exception e){
-           LOGGER.error(e + " " + root);
+        } catch (Exception e) {
+            LOGGER.error(e + " " + root);
         }
         LOGGER.info("Successfully saved " + savedPages.size() + " pages; " +
                 "count " + (savedPagesPaths.size()) + " site " + root);
         return savedPages;
     }
 
-    public Page createPageObject(Connection connection, int siteId, SiteRepository siteRepository) throws UnsupportedMimeTypeException {
+    public Page createPageObject(Connection connection, int siteId) throws UnsupportedMimeTypeException {
         Page page;
         Connection.Response response;
         try {
             response = connection.execute();
-            int statusCode =  response.statusCode();
+            int statusCode = response.statusCode();
             String path = URLDecoder.decode(response.url().getPath(), StandardCharsets.UTF_8);
-            page = new Page(path, statusCode, response.body(), siteId);
+            String content = response.body();
+            page = new Page(path, statusCode, content, siteId);
         } catch (HttpStatusException hse) {
-            Site site = siteRepository.findById(siteId).get();
-            String path = URLDecoder.decode(hse.getUrl().substring(site.getUrl().length()), StandardCharsets.UTF_8);
+            String url = connection.request().url().getPath();
+            String path = URLDecoder.decode(url, StandardCharsets.UTF_8);
             page = new Page(path, hse.getStatusCode(), "", siteId);
             return page;
         } catch (UnsupportedMimeTypeException e) {
@@ -105,7 +104,7 @@ public class URLsStorage {
         return props.getUserAgent();
     }
 
-    public int getBufferMaxSize(){
+    public int getBufferMaxSize() {
         return props.getBufferSize();
     }
 
