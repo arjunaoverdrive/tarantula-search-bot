@@ -154,7 +154,7 @@ public class SearchHelper {
         int count = optional.orElse(0);
 
         for (Map.Entry<Integer, Integer> e : page2count.entrySet()) {
-            if (e.getValue() - count >= -1 && count != 0) {
+            if (e.getValue() - count >= -3 && count != 0) {
                 pageIds.add(e.getKey());
             }
         }
@@ -164,9 +164,7 @@ public class SearchHelper {
     private String createSqlToGetIndices() {
         Set<Integer> lemmaIds = new HashSet(getLemmasIds());
         List<Integer> pageIds = getPageIdsByLemmaId(lemmaIds);
-//        if (pageIds.size() == 0) {
-//            throw new NullPointerException("По данному запросу ничего не найдено: " + query);
-//        }
+
         StringBuilder sql = new StringBuilder("SELECT lemma_id, page_id, `rank` FROM `index` WHERE lemma_id IN (");
         for (Integer lemmaId : lemmaIds) {
             sql.append(lemmaId).append(", ");
