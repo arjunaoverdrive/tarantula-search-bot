@@ -114,6 +114,9 @@ public class SearchHelper {
         for (Lemma l : lemmas) {
             ids.add(l.getId());
         }
+        if(ids.size() == 0){
+            throw new NullPointerException("No lemmas ids found.");
+        }
         return ids;
     }
 
@@ -146,9 +149,6 @@ public class SearchHelper {
     private List<Integer> getPageIdsByLemmaId(Set<Integer> lemmaIds) {
         List<Integer> pageIds = new ArrayList<>();
         Map<Integer, Integer> page2count = getPage2CountMap(lemmaIds);
-        if(lemmaIds.size() == 0){
-            throw new NullPointerException("No lemmas ids found." + " Page2count size = " + page2count.size());
-        }
 
         Optional<Integer> optional = page2count.values().stream().max(Integer::compareTo);
         int count = optional.orElse(0);
