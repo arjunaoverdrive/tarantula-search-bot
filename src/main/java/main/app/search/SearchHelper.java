@@ -154,7 +154,9 @@ public class SearchHelper {
         int count = optional.orElse(0);
 
         for (Map.Entry<Integer, Integer> e : page2count.entrySet()) {
-            if (e.getValue() - count >= -3 && count != 0) {
+            if (
+//                    e.getValue() - count >= -3 &&
+                            count != 0) {
                 pageIds.add(e.getKey());
             }
         }
