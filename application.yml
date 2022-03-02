@@ -12,10 +12,15 @@ server.servlet.context-path: /admin
 buffer-size: 100
 sites:
   -
-    url: https://<website-address>
-    name: <website-name>
+    url: https://www.svetlovka.ru
+    name: Центральная городская молодежная библиотека им. М. А. Светлова
   -
-    url: https://<another-website-address>
-    name: <another-website-name>
-
+    url: https://www.lutherancathedral.ru
+    name: Собор Петра и Павла
+  -
+    url: https://nikoartgallery.com
+    name: Галерея искусств Niko
+  -
+    url: https://ipfran.ru
+    name: ИПФ РАН
 
