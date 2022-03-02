@@ -19,6 +19,7 @@ The port, the application will listen to is also configured here.
 5. Open the src/resources/static/templates/index.html file, locate line 34, and specify your server address like this:<protocol>://<server-address>:<port>/admin
 6. Run mvn clean package. This will create a jar file in the target/ folder
 7. This jar file can either be run from a CLI/terminal or you can create a .bat file to be able to run it by simply clicking it, e.g. like this: java -jar TarantulaSearchBot-1.0-SNAPSHOT.jar  
-***Notes***  
-If the application crashed due to lack of RAM while indexing, decrease the buffer-size parameter in the application.yml file. Then, rerun mvn clean package.
 
+***Notes***  
+1. If the application crashed due to lack of RAM while indexing, decrease the buffer-size parameter in the application.yml file. Then, rerun mvn clean package.
+2. A trial instance of the app can be found at http://tarantula-search-bot.herokuapp.com/admin/
