@@ -1,12 +1,12 @@
-#Tarantula Search Bot  
+# Tarantula Search Bot  
 Local search engine Java Sprong Boot application  
-#Technologies used  
+## Technologies used  
 **Java, Spring Boot, Spring Data Jpa, MySQL, ForkJoinPool**  
-###Prerequisites:
+### Prerequisites:  
 1. Java 14 or higher
 2. MySQL Server v 8
 3. Maven  
-###Installation steps:
+### Installation steps:
 1. Clone the project from the repository.
 2. There are some third-party repositories used in this project in the lemmatizer component; all of them are located in the lib/ folder. Add them to the local Maven repository to be able to build the project. For this, open a CLI/ terminal window, navigate to the project folder, and run the mvn deploy:deploy-file command to add each .jar file, e.g., 
         mvn deploy:deploy-file -Durl="file:///lib/dictionary-reader-1.5 dictionary-reader\1.5" -Dfile="dictionary-reader-1.5.jar" -DgroupId=org.apache.lucene.morphology -DartifactId=dictionary-reader -Dpackaging=jar -Dversion=1.5  
