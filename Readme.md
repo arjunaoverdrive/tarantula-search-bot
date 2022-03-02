@@ -1,5 +1,5 @@
 # Tarantula Search Bot  
-Local search engine Java Sprong Boot application  
+Local search engine Java Sprong Boot application. Add a few websites to the application.yaml file, index them, and search through them! 
 ## Technologies used  
 **Java, Spring Boot, Spring Data Jpa, MySQL, ForkJoinPool**  
 ### Prerequisites:  
