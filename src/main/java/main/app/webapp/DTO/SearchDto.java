@@ -13,7 +13,6 @@ public class SearchDto {
         return result;
     }
 
-
     public static class Success extends SearchDto {
         private int count;
         private List<SearchResultDto> data;
@@ -56,7 +55,5 @@ public class SearchDto {
             this.error = error;
         }
     }
-
-
 
 }

@@ -40,20 +40,21 @@ public class SearchService {
 
     public SearchDto doSearch(String query, String siteUrl, int offset, int limit) {
         long start = System.currentTimeMillis();
+        if (appState.isIndexing()) {
+            return  new SearchDto.Error("Выполняется индексация, поиск временно недоступен");
+        }
 
         String url = siteUrl == null ? "all" : siteUrl;
         if (query.isEmpty()) {
             throw new IllegalArgumentException("Задан пустой поисковый запрос");
         }
 
-        if(cached && query.equals(cache.getLastQuery()) && url.equals(cache.getSite())){
+        if (cached && query.equals(cache.getLastQuery()) && url.equals(cache.getSite())) {
             return new SearchDto.Success(cache.getCacheCollection().size(),
                     sortResultsByRelevance(cache.getCacheCollection(), limit, offset));
         }
         int siteId = siteUrl == null ? -1 : siteRepository.findByUrl(siteUrl).getId();
-        List<SearchResultDto> results;
-
-        results = performSearch(query, siteId);
+        List<SearchResultDto> results = performSearch(query, siteId);
 
         if (results.size() == 0) {
             return new SearchDto.Error("По данному запросу ничего не найдено: " + query);
@@ -69,9 +70,7 @@ public class SearchService {
 
 
     private List<SearchResultDto> performSearch(String query, int siteId) {
-        if (appState.isIndexing()) {
-            throw new RuntimeException("Выполняется индексация, поиск временно недоступен");
-        }
+
         List<FoundPage> foundPages = getFoundPages(query, siteId);
 
         List<SearchResultDto> results = new ArrayList<>();

@@ -88,19 +88,19 @@ public class SiteService {
 
     public ResultDto startReindexing() {
         if (appState.isIndexing()) {
-            throw new RuntimeException("Индексация уже запущена");
+            return new ResultDto.Error("Индексация уже запущена");
         }
         appState.setStopped(false);
         saveSites();
-        return new ResultDto();
+        return new ResultDto.Success();
     }
 
     public ResultDto stopIndexing() {
         if (!appState.isIndexing() || appState.isStopped()) {
-            throw new RuntimeException("Индексация не запущена");
+            return new ResultDto.Error("Индексация не запущена");
         }
         appState.setStopped(true);
-        return new ResultDto();
+        return new ResultDto.Success();
 
     }
 
@@ -112,7 +112,7 @@ public class SiteService {
         }
         if (site == null) {
             appState.setIndexing(false);
-            throw new NullPointerException("Данная страница находится за пределами сайтов, " +
+            return new ResultDto.Error("Данная страница находится за пределами сайтов, " +
                     "указанных в конфигурационном файле");
         }
 
@@ -127,9 +127,9 @@ public class SiteService {
                 }
             } catch (IOException | InterruptedException e) {
                 LOGGER.error(e.getMessage());
-                throw new Exception(e.getMessage());
+                throw new IOException(e.getMessage());
             }
-            return new ResultDto();
+            return new ResultDto.Success();
         }
     }
 
@@ -242,15 +242,12 @@ public class SiteService {
 
         try {
             Page page = storage.createPageObject(connection, siteId);
-            if (page.getCode() != 200) {
-                throw new NullPointerException("Страница недоступна");
-            }
             persistPageData(page, siteId);
         } catch (UnsupportedMimeTypeException e) {
             LOGGER.info(e.getLocalizedMessage());
         } catch (UnsupportedOperationException e) {
             LOGGER.warn(e);
-            throw new NullPointerException("Контент страницы недоступен");
+            throw new UnsupportedOperationException("Контент страницы недоступен");
         } catch (IOException e) {
             LOGGER.warn(e);
             throw new IOException(e.getLocalizedMessage());

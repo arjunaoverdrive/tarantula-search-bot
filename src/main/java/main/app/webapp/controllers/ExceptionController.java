@@ -8,9 +8,11 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.naming.AuthenticationException;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 
 @ControllerAdvice
 public class ExceptionController {
@@ -33,15 +35,15 @@ public class ExceptionController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity handleError403(RuntimeException e){
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity handleError403(IOException e){
         ExceptionDto error = new ExceptionDto(e.getLocalizedMessage());
         LOGGER.warn(error.getError());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
-    @ExceptionHandler( NullPointerException.class)
-    public ResponseEntity handleError404(NullPointerException e){
+    @ExceptionHandler( NoHandlerFoundException.class)
+    public ResponseEntity handleError404(NoHandlerFoundException e){
         ExceptionDto error = new ExceptionDto(e.getLocalizedMessage());
         LOGGER.warn(error.getError());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
