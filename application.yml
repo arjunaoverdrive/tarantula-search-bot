@@ -16,16 +16,16 @@ user-agent: TarantulaSearchBot (Windows; U; WindowsNT 5.1; en-US; rvl.8.1.6) Gec
 server.servlet.context-path: /admin
 buffer-size: 100
 sites:
-  -
-    url: https://www.svetlovka.ru
-    name: Центральная городская молодежная библиотека им. М. А. Светлова
-  -
-    url: https://www.lutherancathedral.ru
-    name: Собор Петра и Павла
+#  -
+#    url: https://www.svetlovka.ru
+#    name: Центральная городская молодежная библиотека им. М. А. Светлова
+#  -
+#    url: https://www.lutherancathedral.ru
+#    name: Собор Петра и Павла
   -
     url: https://nikoartgallery.com
     name: Галерея искусств Niko
-  -
-    url: https://ipfran.ru
-    name: ИПФ РАН
+#  -
+#    url: https://ipfran.ru
+#    name: ИПФ РАН
 
