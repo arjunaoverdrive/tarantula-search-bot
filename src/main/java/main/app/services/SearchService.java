@@ -71,7 +71,13 @@ public class SearchService {
 
     private List<SearchResultDto> performSearch(String query, int siteId) {
 
-        List<FoundPage> foundPages = getFoundPages(query, siteId);
+        List<FoundPage> foundPages;
+        try {
+            foundPages = getFoundPages(query, siteId);
+        }catch (NullPointerException e){
+            LOGGER.info(e);
+            return new ArrayList<>();
+        }
 
         List<SearchResultDto> results = new ArrayList<>();
         for (FoundPage fp : foundPages) {

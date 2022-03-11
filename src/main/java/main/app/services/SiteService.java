@@ -234,27 +234,29 @@ public class SiteService {
     }
 
     private void persistPage(Site site, String pageUrl) throws IOException {
-        appState.setIndexing(true);
+        synchronized (appState) {
+            appState.setIndexing(true);
 
-        int siteId = site.getId();
-        URLsStorage storage = new URLsStorage(site.getUrl(), pageRepository, props);
-        Connection connection = storage.getConnection(pageUrl);
+            int siteId = site.getId();
+            URLsStorage storage = new URLsStorage(site.getUrl(), pageRepository, props);
+            Connection connection = storage.getConnection(pageUrl);
 
-        try {
-            Page page = storage.createPageObject(connection, siteId);
-            persistPageData(page, siteId);
-        } catch (UnsupportedMimeTypeException e) {
-            LOGGER.info(e.getLocalizedMessage());
-        } catch (UnsupportedOperationException e) {
-            LOGGER.warn(e);
-            throw new UnsupportedOperationException("Контент страницы недоступен");
-        } catch (IOException e) {
-            LOGGER.warn(e);
-            throw new IOException(e.getLocalizedMessage());
-        } finally {
-            site.setStatusTime(LocalDateTime.now());
-            siteRepository.save(site);
-            appState.setIndexing(false);
+            try {
+                Page page = storage.createPageObject(connection, siteId);
+                persistPageData(page, siteId);
+            } catch (UnsupportedMimeTypeException e) {
+                LOGGER.info(e.getLocalizedMessage());
+            } catch (UnsupportedOperationException e) {
+                LOGGER.warn(e);
+                throw new UnsupportedOperationException("Контент страницы недоступен");
+            } catch (IOException e) {
+                LOGGER.warn(e);
+                throw new IOException(e.getLocalizedMessage());
+            } finally {
+                site.setStatusTime(LocalDateTime.now());
+                siteRepository.save(site);
+                appState.setIndexing(false);
+            }
         }
     }
 

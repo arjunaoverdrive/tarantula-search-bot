@@ -64,7 +64,7 @@ public class SearchHelper {
             l.setSite(rs.getInt("site_id"));
             return l;
         });
-        if (lemmas.size() == 0){
+        if (lemmas.size() == 0) {
             throw new NullPointerException("No lemmas found. SQL: " + sql + "; Query " + query);
         }
         return new HashSet<>(lemmas);
@@ -72,26 +72,21 @@ public class SearchHelper {
 
     private int getMaxFrequency(int siteId) {
         String sql = "SELECT count(id) as `count` FROM page WHERE site_id = " + siteId;
-        List<Integer> pageCount = null;
-        try {
-            pageCount = jdbcTemplate.query(sql, (ResultSet rs, int rowNum) ->
+        List<Integer> pageCount =  jdbcTemplate.query(sql, (ResultSet rs, int rowNum) ->
                     rs.getInt("count")
             );
-        } catch (Exception e) {
-            LOGGER.warn(e);
-        }
+
         return pageCount.get(0);
     }
 
     private List<Lemma> ignoreFrequentLemmas(int siteId) {
         float threshold = getMaxFrequency(siteId) * 0.3f;
         Set<Lemma> lemmas = getLemmas();
-        List<Lemma> res = lemmas.stream()
+        return lemmas.stream()
                 .filter(lemma -> lemma.getFrequency() < threshold
                         && lemma.getFrequency() != 0
-                && lemma.getSiteId() == siteId)
+                        && lemma.getSiteId() == siteId)
                 .collect(Collectors.toList());
-        return res;
     }
 
     private List<Integer> getSiteIds() {
@@ -154,9 +149,7 @@ public class SearchHelper {
         int count = optional.orElse(0);
 
         for (Map.Entry<Integer, Integer> e : page2count.entrySet()) {
-            if (
-//                    e.getValue() - count >= -3 &&
-                            count != 0) {
+            if (count != 0) {
                 pageIds.add(e.getKey());
             }
         }
@@ -183,18 +176,15 @@ public class SearchHelper {
 
     private List<Index> getIndices() {
         String sql = createSqlToGetIndices();
-        List<Index> indices = new ArrayList<>();
-        try {
-            indices = jdbcTemplate.query(sql, (ResultSet rs, int rowNum) -> {
-                Index index = new Index();
-                index.setLemmaId(rs.getInt("lemma_id"));
-                index.setPageId(rs.getInt("page_id"));
-                index.setRank(rs.getFloat("rank"));
-                return index;
-            });
-        } catch (Exception e) {
-            LOGGER.error(e);
-        }
+
+        List<Index> indices = jdbcTemplate.query(sql, (ResultSet rs, int rowNum) -> {
+            Index index = new Index();
+            index.setLemmaId(rs.getInt("lemma_id"));
+            index.setPageId(rs.getInt("page_id"));
+            index.setRank(rs.getFloat("rank"));
+            return index;
+        });
+
         return indices;
     }
 
@@ -206,14 +196,13 @@ public class SearchHelper {
     }
 
     private float getMaxRelevanceFromPagesList(Map<Integer, Float> page2absRelevance) {
-        float maxRelevance = page2absRelevance.values()
+        return page2absRelevance.values()
                 .stream()
                 .max(Float::compareTo)
                 .get();
-        return maxRelevance;
     }
 
-    private Map<Integer, Float> calculateRelevanceForPages()  {
+    private Map<Integer, Float> calculateRelevanceForPages() {
         Map<Integer, Float> page2absRelevance = countAbsoluteRelevanceForPages();
         Set<Integer> ids = page2absRelevance.keySet();
         Map<Integer, Float> page2relevance = new HashMap<>();
@@ -229,6 +218,7 @@ public class SearchHelper {
     private String createQuery2getPagesList(Map<Integer, Float> page2relevance) {
         Set<Integer> pagesIds = page2relevance.keySet();
         StringBuilder sql = new StringBuilder("SELECT DISTINCT id, path, content, site_id FROM page WHERE id IN (");
+
         for (int id : pagesIds) {
             sql.append(id).append(", ");
         }
@@ -241,28 +231,22 @@ public class SearchHelper {
     }
 
     private List<Page> getPages(Map<Integer, Float> page2relevance) {
-        List<Page> foundPages = new ArrayList<>();
-        try {
-            String sql = createQuery2getPagesList(page2relevance);
+        String sql = createQuery2getPagesList(page2relevance);
 
-            foundPages = jdbcTemplate.query(sql, (ResultSet rs, int rowNum) -> {
-                Page p = new Page();
-                p.setId(rs.getInt("id"));
-                p.setPath(rs.getString("path"));
-                p.setContent(rs.getString("content"));
-                p.setSiteId(rs.getInt("site_id"));
+        List<Page> foundPages = jdbcTemplate.query(sql, (ResultSet rs, int rowNum) -> {
+            Page p = new Page();
+            p.setId(rs.getInt("id"));
+            p.setPath(rs.getString("path"));
+            p.setContent(rs.getString("content"));
+            p.setSiteId(rs.getInt("site_id"));
+            return p;
+        });
 
-                return p;
-            });
-        } catch (NullPointerException e) {
-            LOGGER.info(e.getMessage());
-        };
         return foundPages;
     }
 
     private String getTitle(String html) {
-        String title = Jsoup.parse(html).select("title").text();
-        return title;
+        return Jsoup.parse(html).select("title").text();
     }
 
     private String getPageElementWithOwnTextContainingQueryLemmas(String html) {
@@ -276,10 +260,8 @@ public class SearchHelper {
 
         List<Element> elements = body.getAllElements();
         List<String> filtered = elements.stream()
-//                .filter(e -> !e.is("head"))
                 .filter(e -> !e.is("nav"))
                 .filter(e -> !children.contains(e))
-//                .filter(Element::hasText)
                 .map(Element::ownText)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
@@ -307,20 +289,15 @@ public class SearchHelper {
             LOGGER.error(e);
         }
         String withoutExtraTags = parser.removeExtraTags();
-        String res = withoutExtraTags.length() < 200 ? withoutExtraTags : parser.shortenLongSnippet(withoutExtraTags);
-        return res;
+        return withoutExtraTags.length() < 200 ? withoutExtraTags : parser.shortenLongSnippet(withoutExtraTags);
+
     }
 
 
     public List<FoundPage> getFoundPages() {
         List<FoundPage> foundPages = new ArrayList<>();
-        Map<Integer, Float> page2rel;
-//        try {
-            page2rel = calculateRelevanceForPages();
-//        } catch (NullPointerException e) {
-//            LOGGER.info(e.getMessage());
-//            return new ArrayList<>();
-//        }
+        Map<Integer, Float> page2rel = calculateRelevanceForPages();
+
         List<Page> pages = getPages(page2rel);
         for (Page p : pages) {
             int siteId = p.getSiteId();
