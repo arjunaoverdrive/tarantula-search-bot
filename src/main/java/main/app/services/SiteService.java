@@ -248,6 +248,7 @@ public class SiteService {
                 LOGGER.info(e.getLocalizedMessage());
             } catch (UnsupportedOperationException e) {
                 LOGGER.warn(e);
+                appState.setIndexing(false);
                 throw new UnsupportedOperationException("Контент страницы недоступен");
             } catch (IOException e) {
                 LOGGER.warn(e);
