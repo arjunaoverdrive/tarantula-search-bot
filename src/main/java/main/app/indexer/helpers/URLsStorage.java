@@ -23,6 +23,7 @@ public class URLsStorage {
     private final Set<String> savedPagesPaths;
     private final Set<Page> buffer;
     private final PageRepository pageRepository;
+    private final String subdomain;
 
     private final ConfigProperties props;
     private final static Logger LOGGER = Logger.getLogger(URLsStorage.class);
@@ -34,6 +35,7 @@ public class URLsStorage {
         this.buffer = new HashSet<>();
         this.children = new HashSet<>();
         this.savedPagesPaths = new HashSet<>();
+        this.subdomain = getSubdomain();
         this.props = props;
     }
 
@@ -82,8 +84,9 @@ public class URLsStorage {
             response = connection.execute();
             int statusCode = response.statusCode();
             String path = URLDecoder.decode(response.url().getPath(), StandardCharsets.UTF_8);
+            String uri = isDomainEqualRoot() ? getUriWOSubdomain(path) : path;
             String content = response.body();
-            page = new Page(path, statusCode, content, siteId);
+            page = new Page(uri, statusCode, content, siteId);
         } catch (HttpStatusException hse) {
             String url = connection.request().url().getPath();
             String path = URLDecoder.decode(url, StandardCharsets.UTF_8);
@@ -98,6 +101,19 @@ public class URLsStorage {
             return page;
         }
         return page;
+    }
+
+    private boolean isDomainEqualRoot(){
+        return root.substring(root.indexOf("//") + 2).contains("/");
+    }
+
+    private String getSubdomain(){
+        String urlWOProtocol = root.substring(root.lastIndexOf("//") + 2);
+        return urlWOProtocol.substring(urlWOProtocol.indexOf("/"));
+    }
+
+    private String getUriWOSubdomain(String uri){
+        return uri.substring(subdomain.length());
     }
 
     private String getUserAgent() {

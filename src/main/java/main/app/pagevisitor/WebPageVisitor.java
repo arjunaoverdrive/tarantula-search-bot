@@ -30,8 +30,7 @@ public class WebPageVisitor extends RecursiveAction {
     private static final Logger LOGGER = Logger.getLogger(WebPageVisitor.class);
 
     public WebPageVisitor(int siteId, Node node, SiteRepository siteRepository, URLsStorage storage,
-                          LemmaHelper lemmaHelper, IndexHelper indexHelper,
-                          AppState appState) {
+                          LemmaHelper lemmaHelper, IndexHelper indexHelper, AppState appState) {
         this.siteId = siteId;
         this.node = node;
         this.siteRepository = siteRepository;
