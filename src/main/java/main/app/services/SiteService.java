@@ -118,15 +118,15 @@ public class SiteService {
 
         synchronized (appState) {
             try {
-                while (appState.isIndexing()) {
-                    appState.wait();
+                if (appState.isIndexing()) {
+                   return new ResultDto.Error("Выполняется полная индексация. Индексация отдельных страниц временно недоступна");
                 }
                 if (!appState.isIndexing()) {
                     persistPage(site, url);
                     appState.setIndexing(false);
                     appState.notify();
                 }
-            } catch (IOException | InterruptedException e) {
+            } catch (IOException e) {
                 appState.setIndexing(false);
                 LOGGER.error(e.getMessage());
                 throw new IOException(e.getMessage());
@@ -236,8 +236,8 @@ public class SiteService {
     }
 
     private void persistPage(Site site, String pageUrl) throws IOException {
-        synchronized (appState) {
-            appState.setIndexing(true);
+//        synchronized (appState) {
+//            appState.setIndexing(true);
 
             int siteId = site.getId();
             URLsStorage storage = new URLsStorage(site.getUrl(), pageRepository, props);
@@ -260,7 +260,7 @@ public class SiteService {
                 siteRepository.save(site);
 //                appState.setIndexing(false);
             }
-        }
+//        }
     }
 
     private void persistPageData(Page page, int siteId) throws IOException {

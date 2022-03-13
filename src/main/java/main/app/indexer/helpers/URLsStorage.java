@@ -23,7 +23,7 @@ public class URLsStorage {
     private final Set<String> savedPagesPaths;
     private final Set<Page> buffer;
     private final PageRepository pageRepository;
-    private final String subdomain;
+    private String subdomain = "";
 
     private final ConfigProperties props;
     private final static Logger LOGGER = Logger.getLogger(URLsStorage.class);
@@ -35,7 +35,6 @@ public class URLsStorage {
         this.buffer = new HashSet<>();
         this.children = new HashSet<>();
         this.savedPagesPaths = new HashSet<>();
-        this.subdomain = getSubdomain();
         this.props = props;
     }
 
@@ -113,7 +112,7 @@ public class URLsStorage {
     }
 
     private String getUriWOSubdomain(String uri){
-        return uri.substring(subdomain.length());
+        return uri.substring(getSubdomain().length());
     }
 
     private String getUserAgent() {
