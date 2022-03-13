@@ -123,9 +123,11 @@ public class SiteService {
                 }
                 if (!appState.isIndexing()) {
                     persistPage(site, url);
+                    appState.setIndexing(false);
                     appState.notify();
                 }
             } catch (IOException | InterruptedException e) {
+                appState.setIndexing(false);
                 LOGGER.error(e.getMessage());
                 throw new IOException(e.getMessage());
             }
@@ -248,7 +250,7 @@ public class SiteService {
                 LOGGER.info(e.getLocalizedMessage());
             } catch (UnsupportedOperationException e) {
                 LOGGER.warn(e);
-                appState.setIndexing(false);
+//                appState.setIndexing(false);
                 throw new UnsupportedOperationException("Контент страницы недоступен");
             } catch (IOException e) {
                 LOGGER.warn(e);
@@ -256,7 +258,7 @@ public class SiteService {
             } finally {
                 site.setStatusTime(LocalDateTime.now());
                 siteRepository.save(site);
-                appState.setIndexing(false);
+//                appState.setIndexing(false);
             }
         }
     }
