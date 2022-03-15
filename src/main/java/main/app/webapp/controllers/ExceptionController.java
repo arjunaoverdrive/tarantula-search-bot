@@ -42,7 +42,7 @@ public class ExceptionController {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
-    @ExceptionHandler( NoHandlerFoundException.class)
+    @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity handleError404(NoHandlerFoundException e){
         ExceptionDto error = new ExceptionDto(e.getLocalizedMessage());
         LOGGER.warn(error.getError());

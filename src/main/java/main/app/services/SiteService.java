@@ -119,13 +119,12 @@ public class SiteService {
         synchronized (appState) {
             try {
                 if (appState.isIndexing()) {
-                   return new ResultDto.Error("Выполняется полная индексация. Индексация отдельных страниц временно недоступна");
+                    return new ResultDto.Error("Выполняется полная индексация. Индексация отдельных страниц временно недоступна");
                 }
-                if (!appState.isIndexing()) {
-                    persistPage(site, url);
-                    appState.setIndexing(false);
-                    appState.notify();
-                }
+                persistPage(site, url);
+                appState.setIndexing(false);
+                appState.notify();
+
             } catch (IOException e) {
                 appState.setIndexing(false);
                 LOGGER.error(e.getMessage());
@@ -236,31 +235,26 @@ public class SiteService {
     }
 
     private void persistPage(Site site, String pageUrl) throws IOException {
-//        synchronized (appState) {
-//            appState.setIndexing(true);
 
-            int siteId = site.getId();
-            URLsStorage storage = new URLsStorage(site.getUrl(), pageRepository, props);
-            Connection connection = storage.getConnection(pageUrl);
+        int siteId = site.getId();
+        URLsStorage storage = new URLsStorage(site.getUrl(), pageRepository, props);
+        Connection connection = storage.getConnection(pageUrl);
 
-            try {
-                Page page = storage.createPageObject(connection, siteId);
-                persistPageData(page, siteId);
-            } catch (UnsupportedMimeTypeException e) {
-                LOGGER.info(e.getLocalizedMessage());
-            } catch (UnsupportedOperationException e) {
-                LOGGER.warn(e);
-//                appState.setIndexing(false);
-                throw new UnsupportedOperationException("Контент страницы недоступен");
-            } catch (IOException e) {
-                LOGGER.warn(e);
-                throw new IOException(e.getLocalizedMessage());
-            } finally {
-                site.setStatusTime(LocalDateTime.now());
-                siteRepository.save(site);
-//                appState.setIndexing(false);
-            }
-//        }
+        try {
+            Page page = storage.createPageObject(connection, siteId);
+            persistPageData(page, siteId);
+        } catch (UnsupportedMimeTypeException e) {
+            LOGGER.info(e.getLocalizedMessage());
+        } catch (UnsupportedOperationException e) {
+            LOGGER.warn(e);
+            throw new UnsupportedOperationException("Контент страницы недоступен");
+        } catch (IOException e) {
+            LOGGER.warn(e);
+            throw new IOException(e.getLocalizedMessage());
+        } finally {
+            site.setStatusTime(LocalDateTime.now());
+            siteRepository.save(site);
+        }
     }
 
     private void persistPageData(Page page, int siteId) throws IOException {
@@ -315,7 +309,7 @@ public class SiteService {
                 db.setFrequency(frequency);
             }
         }
-        return fromDb;
+        return new ArrayList<>(fromDb);
     }
 
 
