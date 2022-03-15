@@ -13,7 +13,7 @@ Local search engine Java Sprong Boot application. Add a few websites to the appl
 It already contains a default value, so you might want to simply modify it. Specify the db user, and the password as well.
 Add a few sites you want to index as the values of the sites parameters. You need to specify both the site name and the url.
 The port, the application will listen to is also configured here.  
-4. Open the src/resources/static/templates/index.html file, locate line 34, and specify your server address like this: <protocol>://<server-address>:<port>/admin
+4. Open the src/resources/static/templates/index.html file, locate line 34, and specify your server address like this: protocol://server-address:port/admin
 5. Run mvn clean package. This will create a jar file in the target/ folder
 6. This jar file can either be run from a CLI/terminal or you can create a .bat file to be able to run it by simply clicking it, e.g. like this: java -jar TarantulaSearchBot-1.0-SNAPSHOT.jar  
 
