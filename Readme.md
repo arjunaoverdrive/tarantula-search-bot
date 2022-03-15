@@ -8,7 +8,7 @@ Local search engine Java Sprong Boot application. Add a few websites to the appl
 3. Maven  
 ### Installation steps:
 1. Clone the project from the repository.
-2. On the MySQL Server side, create a schema and a user with administrative access level to this schema. Copy the DDL from the Script.sql and execute to create tables.
+2. On the MySQL Server side, create a schema and a user with the administrative access level to this schema. Copy the DDL from the Script.sql and execute it to create tables.
 3. Locate the application.yml file in the project folder, open it in a text editor, and specify the database connection credentials as the value of the spring.datasource.url configuration parameter.  
 It already contains a default value, so you might want to simply modify it. Specify the db user, and the password as well.
 Add a few sites you want to index as the values of the sites parameters. You need to specify both the site name and the url.
