@@ -20,12 +20,14 @@ public class SearchHelper {
     private final int siteId;
     private final LemmaCounter counter;
     private final JdbcTemplate jdbcTemplate;
+    private final float threshold;
     private final Logger LOGGER = Logger.getLogger(SearchHelper.class);
 
-    public SearchHelper(String query, int siteId, JdbcTemplate jdbcTemplate) throws IOException {
+    public SearchHelper(String query, int siteId, JdbcTemplate jdbcTemplate, float threshold) throws IOException {
         this.query = query;
         this.siteId = siteId;
         this.jdbcTemplate = jdbcTemplate;
+        this.threshold = threshold;
         this.counter = new LemmaCounter();
     }
 
@@ -80,10 +82,10 @@ public class SearchHelper {
     }
 
     private List<Lemma> ignoreFrequentLemmas(int siteId) {
-        float threshold = getMaxFrequency(siteId) * 0.3f;
+        float frequencyThreshold = getMaxFrequency(siteId) * threshold;
         Set<Lemma> lemmas = getLemmas();
         return lemmas.stream()
-                .filter(lemma -> lemma.getFrequency() < threshold
+                .filter(lemma -> lemma.getFrequency() < frequencyThreshold
                         && lemma.getFrequency() != 0
                         && lemma.getSiteId() == siteId)
                 .collect(Collectors.toList());

@@ -15,6 +15,8 @@ public class ConfigProperties {
 
     private int bufferSize;
 
+    private float frequencyThreshold;
+
     public void setSites(Set<Site> sites) {
         this.sites = sites;
     }
@@ -33,6 +35,14 @@ public class ConfigProperties {
 
     public int getBufferSize() {
         return bufferSize;
+    }
+
+    public float getFrequencyThreshold() {
+        return frequencyThreshold;
+    }
+
+    public void setFrequencyThreshold(float frequencyThreshold) {
+        this.frequencyThreshold = frequencyThreshold;
     }
 
     public void setBufferSize(int bufferSize) {

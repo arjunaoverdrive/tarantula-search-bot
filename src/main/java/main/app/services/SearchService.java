@@ -2,6 +2,7 @@ package main.app.services;
 
 import main.app.DAO.SiteRepository;
 import main.app.config.AppState;
+import main.app.config.ConfigProperties;
 import main.app.model.Site;
 import main.app.search.FoundPage;
 import main.app.search.SearchCache;
@@ -26,14 +27,16 @@ public class SearchService {
     private boolean cached;
     private final SearchCache cache;
     private final AppState appState;
+    private final ConfigProperties props;
     private static final Logger LOGGER = Logger.getLogger(SearchService.class);
 
 
     @Autowired
-    public SearchService(SiteRepository siteRepository, JdbcTemplate jdbcTemplate, AppState appState) {
+    public SearchService(SiteRepository siteRepository, JdbcTemplate jdbcTemplate, AppState appState, ConfigProperties props) {
         this.siteRepository = siteRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.appState = appState;
+        this.props = props;
         this.cached = false;
         this.cache = new SearchCache();
     }
@@ -54,8 +57,8 @@ public class SearchService {
                     sortResultsByRelevance(cache.getCacheCollection(), limit, offset));
         }
         int siteId = siteUrl == null ? -1 : siteRepository.findByUrl(siteUrl).getId();
-        List<SearchResultDto> results = performSearch(query, siteId);
 
+        List<SearchResultDto> results = performSearch(query, siteId);
         if (results.size() == 0) {
             return new SearchDto.Error("По данному запросу ничего не найдено: " + query);
         }
@@ -103,8 +106,9 @@ public class SearchService {
 
     private List<FoundPage> getFoundPages(String query, int siteId) {
         SearchHelper helper = null;
+        float threshold = props.getFrequencyThreshold();
         try {
-            helper = new SearchHelper(query, siteId, jdbcTemplate);
+            helper = new SearchHelper(query, siteId, jdbcTemplate, threshold);
         } catch (Exception e) {
             LOGGER.error(e.getLocalizedMessage());
         }
