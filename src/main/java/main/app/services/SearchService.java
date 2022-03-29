@@ -44,7 +44,7 @@ public class SearchService {
     public SearchDto doSearch(String query, String siteUrl, int offset, int limit) {
         long start = System.currentTimeMillis();
         if (appState.isIndexing()) {
-            return  new SearchDto.Error("Выполняется индексация, поиск временно недоступен");
+            return new SearchDto.Error("Выполняется индексация, поиск временно недоступен");
         }
 
         String url = siteUrl == null ? "all" : siteUrl;
@@ -70,7 +70,6 @@ public class SearchService {
 
         return new SearchDto.Success(results.size(), data);
     }
-
 
     private List<SearchResultDto> performSearch(String query, int siteId) {
 

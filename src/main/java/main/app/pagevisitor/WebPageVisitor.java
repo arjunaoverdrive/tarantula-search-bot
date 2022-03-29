@@ -124,7 +124,7 @@ public class WebPageVisitor extends RecursiveAction {
         try {
             indexHelper.convertPrototypes2Indices(lemmaHelper.getLemma2ID());
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.error(e);
         }
     }
 
