@@ -19,4 +19,5 @@ The port, the application will listen to is also configured here.
 
 ***Notes***  
 1. If the application crashed due to lack of RAM while indexing, decrease the buffer-size parameter in the application.yml file. Then, rerun mvn clean package.
-2. A trial instance of the app can be found at http://tarantula-search-bot.herokuapp.com/admin/
+2. By default, lemmas whose frequency value for the given site is higher then 30% are ignored when performing search and calculating page relevance. This can be modified via the frequency-threshold parameter in the application.yml file. This is a floating number, so it should be specified in the following format: 0.3f.
+3. A trial instance of the app can be found at http://tarantula-search-bot.herokuapp.com/admin/
