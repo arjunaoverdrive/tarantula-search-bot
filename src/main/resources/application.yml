@@ -1,0 +1,40 @@
+#config for local db and app
+spring:
+  application:
+    name: TarantulaSearchBot
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/search_engine
+    username: testuser
+    password: testtest4321
+
+  profiles:
+    active:
+      -prod
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  liquibase:
+    enabled: false
+    change-log: classpath:db.changelog/db.changelog.master.xml
+        
+server:
+  port: 9999
+  servlet:
+    context-path: /admin
+
+custom:
+  user-agent: TarantulaSearchBot (Windows; U; WindowsNT 5.1; en-US; rvl.8.1.6) Gecko/20070725 Firefox/2.0.0.6
+  buffer-size: 100
+  frequency-threshold: 0.3f
+
+  sites:
+    -
+      url: https://docs.oracle.com/en/java/javase/14/docs/api/java.base/java
+      name: Оракл
