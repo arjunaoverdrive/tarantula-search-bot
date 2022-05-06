@@ -2,8 +2,7 @@
 Local search engine Java Sprong Boot application. Add a few websites to the application.yaml file, index them, and search through them! 
 ## Technologies used
 =======
-**Java, Spring Boot, Spring Data Jpa, PostgreSQL, ForkJoinPool, Apache Lucene Morphoilogy**  
->>>>>>> 4c867ffb29e199a83a92203cd9cfd02767b6992a
+**Java, Spring Boot, Spring Data Jpa, PostgreSQL, ForkJoinPool, Apache Lucene Morphoilogy**
 ### Prerequisites:  
 1. Java 14 or higher
 2. MySQL Server v 8
