@@ -4,18 +4,18 @@ import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "page")
+@Table(name = "page", indexes = @javax.persistence.Index(columnList = "site_id, path"))
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @Column(nullable = false, length = 65535, unique = true)
+    @Column(name = "path", columnDefinition = "TEXT NOT NULL")
     private String path;
-    @Column(nullable = false)
+    @Column(name = "code", columnDefinition = "INT NOT NULL")
     private int code;
-    @Column(length = 16777215 )
+    @Column(name = "content", columnDefinition = "TEXT NOT NULL")
     private String content;
-    @Column(name = "site_id", nullable = false)
+    @Column(name = "site_id", columnDefinition = "INTEGER NOT NULL")
     private Integer siteId;
 
     public Page() {

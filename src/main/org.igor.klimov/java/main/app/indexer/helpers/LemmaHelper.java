@@ -68,7 +68,8 @@ public class LemmaHelper {
             Map<String, Float> weight4LemmasInOneBlock =
                     getWeight4LemmasInOneBlock(e.getKey(), html, e.getValue());
             for(Map.Entry<String, Float> entry : weight4LemmasInOneBlock.entrySet()){
-                res.compute(entry.getKey(), (k, v) -> v == null ? entry.getValue() : v + entry.getValue());
+                res.compute(entry.getKey(), (k, v) -> v == null ?
+                        entry.getValue() : v + entry.getValue());
             }
         }
         return res;

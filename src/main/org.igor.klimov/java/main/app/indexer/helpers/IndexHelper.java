@@ -57,7 +57,7 @@ public class IndexHelper {
             Index index = indices2save.get(i);
             builder.append("('" + index.getLemmaId() + "', '" + index.getPageId() + "', '" + index.getRank() + "'), ");
             if (builder.length() >= BUILDER_SIZE || i == indices2save.size() - 1) {
-                template.execute("INSERT INTO `index`(lemma_id, page_id, `rank`) " +
+                template.execute("INSERT INTO index (lemma_id, page_id, rank) " +
                         "VALUES " + builder.deleteCharAt(builder.lastIndexOf(",")));
                 builder = new StringBuilder();
             }

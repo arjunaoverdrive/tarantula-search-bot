@@ -8,8 +8,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class LemmaCounter {
-    private RussianLuceneMorphology luceneMorphology;
-    private EnglishLuceneMorphology englishLuceneMorphology;
+    private final RussianLuceneMorphology luceneMorphology;
+    private final EnglishLuceneMorphology englishLuceneMorphology;
 
     public LemmaCounter() throws IOException {
         this.luceneMorphology = new RussianLuceneMorphology();
@@ -65,8 +65,8 @@ public class LemmaCounter {
                         list.add(s2);
                     }
                 }
-            }catch (IndexOutOfBoundsException e){
-//                System.out.println(s + " " + " ==================\n" + e.getMessage());
+            }catch (IndexOutOfBoundsException supressed){
+
             }
         }
         return list;

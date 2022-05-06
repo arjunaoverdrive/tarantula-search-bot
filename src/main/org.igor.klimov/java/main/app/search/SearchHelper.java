@@ -73,7 +73,7 @@ public class SearchHelper {
     }
 
     private int getMaxFrequency(int siteId) {
-        String sql = "SELECT count(id) as `count` FROM page WHERE site_id = " + siteId;
+        String sql = "SELECT count(id) as count FROM page WHERE site_id = " + siteId;
         List<Integer> pageCount =  jdbcTemplate.query(sql, (ResultSet rs, int rowNum) ->
                     rs.getInt("count")
             );
@@ -118,7 +118,7 @@ public class SearchHelper {
     }
 
     private String createSqlToGetPagesContainingLemmas(Set<Integer> lemmaIds) {
-        StringBuilder sql = new StringBuilder("SELECT page_id FROM `index` WHERE lemma_id IN (");
+        StringBuilder sql = new StringBuilder("SELECT page_id FROM index WHERE lemma_id IN (");
         for (Integer lemmaId : lemmaIds) {
             sql.append(lemmaId).append(", ");
         }
@@ -162,7 +162,7 @@ public class SearchHelper {
         Set<Integer> lemmaIds = new HashSet(getLemmasIds());
         List<Integer> pageIds = getPageIdsByLemmaId(lemmaIds);
 
-        StringBuilder sql = new StringBuilder("SELECT lemma_id, page_id, `rank` FROM `index` WHERE lemma_id IN (");
+        StringBuilder sql = new StringBuilder("SELECT lemma_id, page_id, rank FROM index WHERE lemma_id IN (");
         for (Integer lemmaId : lemmaIds) {
             sql.append(lemmaId).append(", ");
         }
@@ -270,8 +270,8 @@ public class SearchHelper {
 
         Set<String> lemmasFromQuery = counter.countLemmas(query).keySet();
         for (String s : filtered) {
-            Set<String> lemmasFromPage = counter.countLemmas(s).keySet();
-            if (lemmasFromPage.containsAll(lemmasFromQuery)) {
+            Set<String> lemmasFromPageElement = counter.countLemmas(s).keySet();
+            if (lemmasFromPageElement.containsAll(lemmasFromQuery)) {
                 return s;
             }
         }
@@ -279,7 +279,7 @@ public class SearchHelper {
     }
 
 
-    private String createSnippet(String html) throws RuntimeException {
+    private String createSnippet(String html) {
         SnippetParser parser = null;
         String snippet = getPageElementWithOwnTextContainingQueryLemmas(html);
         if (snippet.equals("Lemmas from query are not present within the same element " + query)) {
@@ -298,9 +298,9 @@ public class SearchHelper {
 
     public List<FoundPage> getFoundPages() {
         List<FoundPage> foundPages = new ArrayList<>();
-        Map<Integer, Float> page2rel = calculateRelevanceForPages();
+        Map<Integer, Float> page2relevance = calculateRelevanceForPages();
 
-        List<Page> pages = getPages(page2rel);
+        List<Page> pages = getPages(page2relevance);
         for (Page p : pages) {
             int siteId = p.getSiteId();
             String uri = p.getPath();
@@ -313,7 +313,7 @@ public class SearchHelper {
                 LOGGER.warn(e + " " + p.getId() + " " + p.getPath());
                 continue;
             }
-            float relevance = page2rel.get(p.getId());
+            float relevance = page2relevance.get(p.getId());
             FoundPage foundPage = new FoundPage(siteId, uri, title, snippet, relevance);
             foundPages.add(foundPage);
         }

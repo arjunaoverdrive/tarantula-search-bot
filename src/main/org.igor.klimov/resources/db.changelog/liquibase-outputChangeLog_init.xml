@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+    <changeSet author="igor1 (generated)" id="1651846230889-1">
+        <createSequence sequenceName="field_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-2">
+        <createSequence sequenceName="index_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-3">
+        <createSequence sequenceName="lemma_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-4">
+        <createSequence sequenceName="page_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-5">
+        <createSequence sequenceName="site_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-6">
+        <createTable tableName="field">
+            <column autoIncrement="true" name="id" type="SERIAL">
+                <constraints primaryKey="true" primaryKeyName="field_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="selector" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="weight" type="FLOAT4">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-7">
+        <createTable tableName="index">
+            <column autoIncrement="true" name="id" type="SERIAL">
+                <constraints primaryKey="true" primaryKeyName="index_pkey"/>
+            </column>
+            <column name="lemma_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="page_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rank" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-8">
+        <createTable tableName="lemma">
+            <column autoIncrement="true" name="id" type="SERIAL">
+                <constraints primaryKey="true" primaryKeyName="lemma_pkey"/>
+            </column>
+            <column name="frequency" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lemma" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="site_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-9">
+        <createTable tableName="page">
+            <column autoIncrement="true" name="id" type="SERIAL">
+                <constraints primaryKey="true" primaryKeyName="page_pkey"/>
+            </column>
+            <column name="code" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="path" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="site_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-10">
+        <createTable tableName="site">
+            <column autoIncrement="true" name="id" type="SERIAL">
+                <constraints primaryKey="true" primaryKeyName="site_pkey"/>
+            </column>
+            <column name="last_error" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(255)"/>
+            <column name="status_time" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="url" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-11">
+        <addUniqueConstraint columnNames="path" constraintName="page_path_key" tableName="page"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-12">
+        <createIndex indexName="idx7ogalxpu2t6pogbj8sbbpk0of" tableName="lemma">
+            <column name="site_id"/>
+            <column name="lemma"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-13">
+        <createIndex indexName="idxdxpfpwp57ynw2y9nds1e4u38f" tableName="page">
+            <column name="site_id"/>
+            <column name="path"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1651846230889-14">
+        <createIndex indexName="idxnsmx98a4vtc4f059p78lhucwr" tableName="index">
+            <column name="page_id"/>
+            <column name="lemma_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

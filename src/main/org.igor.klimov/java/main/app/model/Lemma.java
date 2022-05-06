@@ -1,22 +1,20 @@
 package main.app.model;
 
-import org.hibernate.annotations.SQLInsert;
-
 import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "lemma")
-@SQLInsert(sql = "INSERT INTO lemma(frequency, lemma, site_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE frequency = frequency + VALUES(frequency)")
+@Table(name = "lemma", indexes = @javax.persistence.Index(columnList = "site_id, lemma"))
+//@SQLInsert(sql = "INSERT INTO lemma(frequency, lemma, site_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE frequency = frequency + VALUES(frequency)")
 public class Lemma {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    @Column(nullable = false)
+    @Column(name = "lemma", columnDefinition = "VARCHAR(255) NOT NULL")
     private String lemma;
-    @Column(nullable = false)
+    @Column(name = "frequency", columnDefinition = "INT NOT NULL")
     private int frequency;
-    @Column(name = "site_id", nullable = false)
+    @Column(name = "site_id", columnDefinition = "INT NOT NULL")
     private int siteId;
 
     public Lemma() {

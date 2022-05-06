@@ -17,16 +17,16 @@ public class Site {
     private StatusEnum status;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    @Column(name = "status_time", nullable = false)
+    @Column(name = "status_time", columnDefinition = "TIMESTAMP WITH TIME ZONE NOT NULL")
     private LocalDateTime statusTime;
 
-    @Column(name = "last_error")
+    @Column(name = "last_error", columnDefinition = "TEXT NOT NULL")
     private String lastError;
 
-    @Column(nullable = false)
+    @Column(name = "url", columnDefinition = "TEXT NOT NULL")
     private String url;
 
-    @Column(nullable = false)
+    @Column(name = "name", columnDefinition = "TEXT NOT NULL")
     private String name;
 
     public Site() {

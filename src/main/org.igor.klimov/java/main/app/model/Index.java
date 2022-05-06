@@ -4,17 +4,17 @@ import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "`index`")
+@Table(name = "`index`", indexes = @javax.persistence.Index(columnList = "page_id, lemma_id"))
 public class Index {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    @Column(name="page_id", nullable = false)
+    @Column(name="page_id", columnDefinition = "INT NOT NULL")
     private int pageId;
-    @Column(name = "lemma_id", nullable = false)
+    @Column(name = "lemma_id", columnDefinition = "INT NOT NULL")
     private int lemmaId;
-    @Column(name = "`rank`", nullable = false)
+    @Column(name = "`rank`", columnDefinition = "DOUBLE PRECISION NOT NULL")
     private float rank;
 
     public Index() {

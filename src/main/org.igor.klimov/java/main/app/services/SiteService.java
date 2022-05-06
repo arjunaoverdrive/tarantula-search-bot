@@ -214,7 +214,7 @@ public class SiteService {
             }
         }
         try {
-            jdbcTemplate.execute("DELETE from `index` WHERE page_id IN (" + builder.toString() + ")");
+            jdbcTemplate.execute("DELETE from index WHERE page_id IN (" + builder.toString() + ")");
         } catch (Exception e) {
             LOGGER.error(e.getLocalizedMessage());
         }
@@ -341,7 +341,7 @@ public class SiteService {
                     index.setRank(rs.getFloat("rank"));
                     return index;
                 });
-        jdbcTemplate.execute("DELETE from `index` WHERE page_id =" + id);
+        jdbcTemplate.execute("DELETE from index WHERE page_id =" + id);
         LOGGER.info("Deleted " + indices.size() + " indices for page " + page.getPath());
         List<Integer> lemmaIds = indices.stream().map(Index::getLemmaId).collect(Collectors.toList());
         indices.clear();

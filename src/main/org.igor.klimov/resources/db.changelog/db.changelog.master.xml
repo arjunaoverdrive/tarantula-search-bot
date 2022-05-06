@@ -1,0 +1,27 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext
+   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd
+   http://www.liquibase.org/xml/ns/dbchangelog
+   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <include file="db.changelog/liquibase-outputChangeLog_init.xml"/>
+
+    <changeSet id="new_id" author="igor1">
+        <insert tableName="field">
+            <column name="id" valueSequenceNext="field_id_seq"/>
+            <column name="name" value="title"/>
+            <column name="selector" value="title"/>
+            <column name="weight" value="1"/>
+        </insert>
+        <insert tableName="field">
+            <column name="id" valueSequenceNext="field_id_seq"/>
+            <column name="name" value="body"/>
+            <column name="selector" value="body"/>
+            <column name="weight" value="0.8"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

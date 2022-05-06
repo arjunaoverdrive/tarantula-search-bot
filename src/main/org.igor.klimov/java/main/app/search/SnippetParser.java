@@ -49,6 +49,7 @@ public class SnippetParser {
         return words;
     }
 
+    //todo rewrite with a map or set
     private WordOnPage getQueryWordOnPageObject(String lemma) {
         List<WordOnPage> wordsOnPage = getWordsOnPage();
         WordOnPage target = null;
