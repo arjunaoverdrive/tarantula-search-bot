@@ -5,7 +5,7 @@ Local search engine Java Sprong Boot application. Add a few websites to the appl
 **Java, Spring Boot, Spring Data Jpa, PostgreSQL, ForkJoinPool, Apache Lucene Morphoilogy**
 ### Prerequisites:  
 1. Java 14 or higher
-2. MySQL Server v 8
+2. PostgreSQL
 3. Maven  
 ### Installation steps:
 1. Clone the project from the repository.
