@@ -23,8 +23,8 @@ public class SearchController {
     @GetMapping("/api/search")
     public ResponseEntity search(@RequestParam String query,
                                  @RequestParam(required = false) String site,
-                                 @RequestParam(required = false) int offset,
-                                 @RequestParam(required = false) int limit) {
+                                 @RequestParam(required = false) Integer offset,
+                                 @RequestParam(required = false) Integer limit) {
         SearchDto result = searchService.doSearch(query, site, offset, limit);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }

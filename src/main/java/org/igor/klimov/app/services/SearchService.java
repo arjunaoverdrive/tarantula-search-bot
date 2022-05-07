@@ -44,12 +44,12 @@ public class SearchService {
     public SearchDto doSearch(String query, String siteUrl, int offset, int limit) {
         long start = System.currentTimeMillis();
         if (appState.isIndexing()) {
-            return new SearchDto.Error("Выполняется индексация, поиск временно недоступен");
+            return new SearchDto.Error("Indexing is in progress, search is temporarily unavailable");
         }
 
         String url = siteUrl == null ? "all" : siteUrl;
         if (query.isEmpty()) {
-            throw new IllegalArgumentException("Задан пустой поисковый запрос");
+            throw new IllegalArgumentException("The search query is empty");
         }
 
         if (cached && query.equals(cache.getLastQuery()) && url.equals(cache.getSite())) {
@@ -60,7 +60,7 @@ public class SearchService {
 
         List<SearchResultDto> results = performSearch(query, siteId);
         if (results.size() == 0) {
-            return new SearchDto.Error("По данному запросу ничего не найдено: " + query);
+            return new SearchDto.Error("Nothing is found by the search query: " + query);
         }
         limit = limit == 0 ? 20 : limit;
         List<SearchResultDto> data = sortResultsByRelevance(results, limit, offset);

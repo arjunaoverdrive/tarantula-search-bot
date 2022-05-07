@@ -1,21 +1,19 @@
 package org.igor.klimov;
 
 import org.assertj.core.api.Assertions;
-import org.igor.klimov.app.config.ConfigProperties;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.List;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -23,30 +21,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource("/application-test.properties")
-public class StatisticsControllerTest {
-
-    public StatisticsControllerTest() {
-    }
+public class ExceptionControllerTest {
 
     @Autowired
     MockMvc mockMvc;
 
-    @Autowired
-    ConfigProperties properties;
+    public ExceptionControllerTest() {
+    }
 
     @Test
-    @Sql(value = "/site-before.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-    public void statisticsTest() throws Exception{
-        ConfigProperties.Site site = (ConfigProperties.Site) properties.getSites().toArray()[0];
-        MvcResult result = this.mockMvc
-                .perform(get("/api/statistics"))
+    public void indexSeparatePageMissingRequestParameter() throws Exception {
+        MvcResult result = this.mockMvc.perform(post("/api/indexPage"))
                 .andDo(print())
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andReturn();
-        Assertions.assertThat(result).isNotNull();
-        String contentAsString = result.getResponse().getContentAsString();
-        List<String> fields = List.of("result", "statistics", "total", "sites", "pages", "lemmas", "isIndexing", "detailed");
+        Assertions.assertThat(result.getResponse().getContentType().equals(MediaType.APPLICATION_JSON_VALUE)).isTrue();
+    }
 
-        fields.forEach(f -> Assertions.assertThat(contentAsString.contains(f)).isTrue());
+    @Test
+    public void testUnsupportedMethod() throws Exception {
+        this.mockMvc.perform(post("/api/startIndexing"))
+                .andDo(print())
+                .andExpect(status().isMethodNotAllowed())
+                .andReturn();
+    }
+
+    @Test
+    public void testUnsupportedEndPoint() throws Exception {
+        this.mockMvc.perform(get("/startIndexing"))
+                .andDo(print())
+                .andExpect(status().isNotFound());
     }
 }

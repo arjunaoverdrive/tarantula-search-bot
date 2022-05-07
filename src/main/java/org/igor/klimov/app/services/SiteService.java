@@ -88,7 +88,7 @@ public class SiteService {
 
     public ResultDto startReindexing() {
         if (appState.isIndexing()) {
-            return new ResultDto.Error("Индексация уже запущена");
+            return new ResultDto.Error("Indexing is already in progress");
         }
         appState.setStopped(false);
         saveSites();
@@ -97,7 +97,7 @@ public class SiteService {
 
     public ResultDto stopIndexing() {
         if (!appState.isIndexing() || appState.isStopped()) {
-            return new ResultDto.Error("Индексация не запущена");
+            return new ResultDto.Error("Indexing is not in progress");
         }
         appState.setStopped(true);
         return new ResultDto.Success();
@@ -105,26 +105,26 @@ public class SiteService {
     }
 
     public ResultDto indexPage(String url) throws Exception {
-        Site site = getSiteContainingUrl(url);
-        if (url.isEmpty()) {
-            appState.setIndexing(false);
-            throw new IllegalArgumentException("Задана пустая страница");
-        }
-        if (site == null) {
-            appState.setIndexing(false);
-            return new ResultDto.Error("Данная страница находится за пределами сайтов, " +
-                    "указанных в конфигурационном файле");
-        }
-
         synchronized (appState) {
+
+            Site site = getSiteContainingUrl(url);
+            if (url.isEmpty()) {
+                appState.setIndexing(false);
+                throw new IllegalArgumentException("The URL is not specified");
+            }
+            if (site == null) {
+                appState.setIndexing(false);
+                return new ResultDto.Error("This page is outside of the specified websites");
+            }
             try {
-                if (appState.isIndexing()) {
-                    return new ResultDto.Error("Выполняется полная индексация. Индексация отдельных страниц временно недоступна");
-                }
+//                if (appState.isIndexing()) {
+//                    return new ResultDto.Error("Выполняется полная индексация. " +
+//                            "Индексация отдельных страниц временно недоступна");
+//                }
+                appState.setIndexing(true);
                 persistPage(site, url);
                 appState.setIndexing(false);
                 appState.notify();
-
             } catch (IOException e) {
                 appState.setIndexing(false);
                 LOGGER.error(e.getMessage());
@@ -247,7 +247,7 @@ public class SiteService {
             LOGGER.info(e.getLocalizedMessage());
         } catch (UnsupportedOperationException e) {
             LOGGER.warn(e);
-            throw new UnsupportedOperationException("Контент страницы недоступен");
+            throw new UnsupportedOperationException("Page content is not available");
         } catch (IOException e) {
             LOGGER.warn(e);
             throw new IOException(e.getLocalizedMessage());
@@ -330,7 +330,7 @@ public class SiteService {
 
     private List<Lemma> clearDataForPageInCaseOfDuplication(Page page) {
         int id = page.getId();
-        String sql = "SELECT * from `index` WHERE page_id = " + id;
+        String sql = "SELECT * from index WHERE page_id = " + id;
 
         List<Index> indices =
                 jdbcTemplate.query(sql, (ResultSet rs, int rowNum) -> {
