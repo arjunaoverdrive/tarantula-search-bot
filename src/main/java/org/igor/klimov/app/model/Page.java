@@ -9,13 +9,13 @@ public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @Column(name = "path", columnDefinition = "TEXT NOT NULL")
+    @Column(name = "path", columnDefinition = "VARCHAR(255) NOT NULL")
     private String path;
     @Column(name = "code", columnDefinition = "INT NOT NULL")
     private int code;
     @Column(name = "content", columnDefinition = "TEXT NOT NULL")
     private String content;
-    @Column(name = "site_id", columnDefinition = "INTEGER NOT NULL")
+    @Column(name = "site_id", columnDefinition = "INT NOT NULL")
     private Integer siteId;
 
     public Page() {
