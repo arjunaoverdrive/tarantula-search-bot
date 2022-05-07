@@ -102,7 +102,7 @@
             <column autoIncrement="true" name="id" type="INT">
                 <constraints primaryKey="true" primaryKeyName="site_pkey"/>
             </column>
-            <column name="last_error" type="TEXT">
+            <column name="last_error" type="TEXT DEFAULT ''">
                 <constraints nullable="false"/>
             </column>
             <column name="name" type="TEXT">

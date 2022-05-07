@@ -20,7 +20,7 @@ public class Site {
     @Column(name = "status_time", columnDefinition = "TIMESTAMP WITH TIME ZONE NOT NULL")
     private LocalDateTime statusTime;
 
-    @Column(name = "last_error", columnDefinition = "TEXT NOT NULL")
+    @Column(name = "last_error", columnDefinition = "TEXT NOT NULL DEFAULT ''")
     private String lastError;
 
     @Column(name = "url", columnDefinition = "TEXT NOT NULL")
