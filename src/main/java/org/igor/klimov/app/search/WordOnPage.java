@@ -1,6 +1,6 @@
 package org.igor.klimov.app.search;
 
-public class WordOnPage {
+public class WordOnPage implements Comparable<WordOnPage>{
 
     private int position;
     private String lemma;
@@ -40,5 +40,11 @@ public class WordOnPage {
                 ", lemma='" + lemma + '\'' +
                 ", word='" + word + '\'' +
                 '}';
+    }
+
+
+    @Override
+    public int compareTo(WordOnPage wop) {
+        return this.position - wop.position;
     }
 }

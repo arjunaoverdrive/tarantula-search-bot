@@ -1,5 +1,6 @@
 package org.igor.klimov.app.pagevisitor;
 
+import org.apache.log4j.Logger;
 import org.igor.klimov.app.DAO.SiteRepository;
 import org.igor.klimov.app.config.AppState;
 import org.igor.klimov.app.indexer.IndexPrototype;
@@ -8,13 +9,15 @@ import org.igor.klimov.app.indexer.helpers.LemmaHelper;
 import org.igor.klimov.app.indexer.helpers.URLsStorage;
 import org.igor.klimov.app.model.Page;
 import org.igor.klimov.app.model.Site;
-import org.apache.log4j.Logger;
 import org.jsoup.Connection;
 import org.jsoup.UnsupportedMimeTypeException;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 
@@ -58,6 +61,7 @@ public class WebPageVisitor extends RecursiveAction {
         }
 
         List<WebPageVisitor> subActions = new LinkedList<>();
+
         for (Node child : childrenNodes) {
             saveChildPageToStorage(child);
             WebPageVisitor action = new WebPageVisitor(siteId, child, siteRepository, storage, lemmaHelper,
@@ -78,19 +82,25 @@ public class WebPageVisitor extends RecursiveAction {
     private void saveChildPageToStorage(Node node) {
         Page page;
         Connection connection = storage.getConnection(node.getPath());
+
         try {
             page = storage.createPageObject(connection, siteId);
         } catch (UnsupportedMimeTypeException e) {
             return;
         }
+
         if (storage.addPageURL(page.getPath())) {
             storage.addPage2Buffer(page);
+
             if (page.getCode() == 200) {
                 lemmaHelper.addLemmasCache(
                         lemmaHelper.calculateWeightForAllLemmasOnPage(page.getContent()));
             }
+
         }
+
         int bufferMaxSize = storage.getBufferMaxSize();
+
         if (storage.getBuffer().size() >= bufferMaxSize) {
             flushBufferToDb();
             Site site = siteRepository.findById(siteId).get();
@@ -104,7 +114,7 @@ public class WebPageVisitor extends RecursiveAction {
         if (p.getCode() == 200) {
             int pageId = p.getId();
             String html = p.getContent();
-            Map<String, Float>word2weight = lemmaHelper.calculateWeightForAllLemmasOnPage(html);
+            Map<String, Float> word2weight = lemmaHelper.calculateWeightForAllLemmasOnPage(html);
 
             for (Map.Entry<String, Float> e : word2weight.entrySet()) {
                 IndexPrototype ip = new IndexPrototype(pageId, e.getKey(), e.getValue());

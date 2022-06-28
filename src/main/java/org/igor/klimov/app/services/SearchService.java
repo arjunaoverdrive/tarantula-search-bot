@@ -1,19 +1,19 @@
 package org.igor.klimov.app.services;
 
+import org.apache.log4j.Logger;
 import org.igor.klimov.app.DAO.SiteRepository;
 import org.igor.klimov.app.config.AppState;
+import org.igor.klimov.app.config.ConfigProperties;
 import org.igor.klimov.app.model.Site;
-import org.igor.klimov.app.search.SearchCache;
+import org.igor.klimov.app.search.EnhancedSearchHelper;
+import org.igor.klimov.app.search.FoundPage;
 import org.igor.klimov.app.webapp.DTO.SearchDto;
 import org.igor.klimov.app.webapp.DTO.SearchResultDto;
-import org.igor.klimov.app.config.ConfigProperties;
-import org.igor.klimov.app.search.FoundPage;
-import org.igor.klimov.app.search.SearchHelper;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -24,11 +24,10 @@ public class SearchService {
 
     private final SiteRepository siteRepository;
     private final JdbcTemplate jdbcTemplate;
-    private boolean cached;
-    private final SearchCache cache;
     private final AppState appState;
     private final ConfigProperties props;
     private static final Logger LOGGER = Logger.getLogger(SearchService.class);
+    private int resultSize;
 
 
     @Autowired
@@ -37,8 +36,7 @@ public class SearchService {
         this.jdbcTemplate = jdbcTemplate;
         this.appState = appState;
         this.props = props;
-        this.cached = false;
-        this.cache = new SearchCache();
+        this.resultSize = 0;
     }
 
     public SearchDto doSearch(String query, String siteUrl, int offset, int limit) {
@@ -47,36 +45,30 @@ public class SearchService {
             return new SearchDto.Error("Indexing is in progress, search is temporarily unavailable");
         }
 
-        String url = siteUrl == null ? "all" : siteUrl;
         if (query.isEmpty()) {
             throw new IllegalArgumentException("The search query is empty");
         }
 
-        if (cached && query.equals(cache.getLastQuery()) && url.equals(cache.getSite())) {
-            return new SearchDto.Success(cache.getCacheCollection().size(),
-                    sortResultsByRelevance(cache.getCacheCollection(), limit, offset));
-        }
         int siteId = siteUrl == null ? -1 : siteRepository.findByUrl(siteUrl).getId();
 
-        List<SearchResultDto> results = performSearch(query, siteId);
+//        limit = limit == 0 ? 20 : limit;
+
+        List<SearchResultDto> results = performSearch(query, siteId, limit, offset);
         if (results.size() == 0) {
             return new SearchDto.Error("Nothing is found by the search query: " + query);
         }
-        limit = limit == 0 ? 20 : limit;
-        List<SearchResultDto> data = sortResultsByRelevance(results, limit, offset);
-        setCacheValues(query, url, results);
 
         LOGGER.info("Doing search took " + (System.currentTimeMillis() - start));
 
-        return new SearchDto.Success(results.size(), data);
+        return new SearchDto.Success(resultSize, results);
     }
 
-    private List<SearchResultDto> performSearch(String query, int siteId) {
+    private List<SearchResultDto> performSearch(String query, int siteId, int limit, int offset) {
 
         List<FoundPage> foundPages;
         try {
-            foundPages = getFoundPages(query, siteId);
-        }catch (NullPointerException e){
+            foundPages = getFoundPages(query, siteId, limit, offset);
+        } catch (NullPointerException e) {
             LOGGER.info(e);
             return new ArrayList<>();
         }
@@ -86,39 +78,39 @@ public class SearchService {
             int foundPageSiteId = fp.getSiteId();
             Site fromDb = siteRepository.findById(foundPageSiteId).get();
             SearchResultDto srd = new SearchResultDto(
-                    fromDb.getUrl(), fromDb.getName(), fp.getUri(),
-                    fp.getTitle(), fp.getSnippet(), fp.getRelevance());
+                    fromDb.getUrl(),
+                    fromDb.getName(),
+                    fp.getUri(),
+                    fp.getTitle(),
+                    fp.getSnippet(),
+                    fp.getRelevance());
             results.add(srd);
         }
 
-        return results;
+        return sortByRelevance(results);
     }
 
-    private List<SearchResultDto> sortResultsByRelevance(List<SearchResultDto> results, int limit, int offset) {
+    private List<SearchResultDto> sortByRelevance(List<SearchResultDto> results){
         return results.stream()
-                .distinct()
                 .sorted(Comparator.comparing(SearchResultDto::getRelevance).reversed())
-                .skip(offset)
-                .limit(limit)
                 .collect(Collectors.toList());
     }
 
-    private List<FoundPage> getFoundPages(String query, int siteId) {
-        SearchHelper helper = null;
+
+    private List<FoundPage> getFoundPages(String query, int siteId, int limit, int offset) {
         float threshold = props.getFrequencyThreshold();
+        EnhancedSearchHelper helper = null;
+        List<FoundPage> foundPages = null;
         try {
-            helper = new SearchHelper(query, siteId, jdbcTemplate, threshold);
-        } catch (Exception e) {
-            LOGGER.error(e.getLocalizedMessage());
+            helper = new EnhancedSearchHelper(query, siteId, jdbcTemplate, threshold);
+            foundPages = helper.getFoundPages(limit, offset);
+        } catch (IOException e) {
+            LOGGER.error(e);
         }
-        return helper.getFoundPages();
+        resultSize = helper.getResultsSize();
+
+        return foundPages;
     }
 
-    private void setCacheValues(String query, String site, List<SearchResultDto> results) {
-        cache.setLastQuery(query);
-        cache.setSite(site);
-        cache.setCacheCollection(results);
-        cached = true;
-    }
 }
 
