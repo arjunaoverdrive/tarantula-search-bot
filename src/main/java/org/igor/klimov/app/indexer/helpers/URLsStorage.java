@@ -23,7 +23,6 @@ public class URLsStorage {
     private final Set<String> savedPagesPaths;
     private final Set<Page> buffer;
     private final PageRepository pageRepository;
-    private String subdomain = "";
 
     private final ConfigProperties props;
     private final static Logger LOGGER = Logger.getLogger(URLsStorage.class);

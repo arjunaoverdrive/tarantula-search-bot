@@ -31,7 +31,7 @@ public class SearchSqlBuilder {
         if (siteId == -1) {
             String s = "SELECT p.site_id, COUNT(*) as page_count FROM page p GROUP BY p.site_id";
             return s;
-        }
+        } else
 
         return createSqlToGetPageCountForASingleSite(siteId);
     }
@@ -40,12 +40,13 @@ public class SearchSqlBuilder {
 
         StringBuilder builder = new StringBuilder("SELECT site_id, COUNT(*) as page_count FROM page WHERE site_id = ");
         builder.append(siteId);
+        builder.append(" GROUP BY page.site_id");
         return builder.toString();
     }
 
-    String createSqlToGetPagesContainingLemmas(List<Integer> lemmas) {
+    String createSqlToGetPagesContainingLemmas(List<Integer> lemmas, int lemmasCount) {
 
-        int lemmasSize = lemmas.size();
+//        int lemmasSize = lemmas.stream().map(l -> l);
 
         StringBuilder builder = new StringBuilder(
                 "SELECT page_id FROM" +
@@ -56,7 +57,7 @@ public class SearchSqlBuilder {
         }
 
         builder.delete(builder.lastIndexOf(", "), builder.length());
-        builder.append(") GROUP BY i.page_id ORDER BY count DESC) AS page2count WHERE count = " + lemmasSize);
+        builder.append(") GROUP BY i.page_id ORDER BY count DESC) AS page2count WHERE count = " + lemmasCount);
 
         return builder.toString();
     }
@@ -76,7 +77,6 @@ public class SearchSqlBuilder {
         builder.append(limit);
         builder.append(" OFFSET ");
         builder.append(offset);
-        System.out.println(builder);
 
         return builder.toString();
 

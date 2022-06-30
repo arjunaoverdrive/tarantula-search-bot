@@ -51,8 +51,6 @@ public class SearchService {
 
         int siteId = siteUrl == null ? -1 : siteRepository.findByUrl(siteUrl).getId();
 
-//        limit = limit == 0 ? 20 : limit;
-
         List<SearchResultDto> results = performSearch(query, siteId, limit, offset);
         if (results.size() == 0) {
             return new SearchDto.Error("Nothing is found by the search query: " + query);

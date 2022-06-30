@@ -1,20 +1,19 @@
 package org.igor.klimov.app.pagevisitor;
 
+import org.apache.log4j.Logger;
 import org.igor.klimov.app.DAO.LemmaRepository;
 import org.igor.klimov.app.DAO.PageRepository;
-import org.igor.klimov.app.model.Field;
-import org.igor.klimov.app.model.Site;
 import org.igor.klimov.app.DAO.SiteRepository;
 import org.igor.klimov.app.config.AppState;
 import org.igor.klimov.app.config.ConfigProperties;
 import org.igor.klimov.app.indexer.helpers.IndexHelper;
 import org.igor.klimov.app.indexer.helpers.LemmaHelper;
 import org.igor.klimov.app.indexer.helpers.URLsStorage;
+import org.igor.klimov.app.model.Field;
+import org.igor.klimov.app.model.Site;
 import org.igor.klimov.app.model.StatusEnum;
-import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ConcurrentModificationException;
 import java.util.List;
@@ -73,8 +72,8 @@ public class WebPageVisitorStarter implements Runnable {
                     LOGGER.error("Indexing was interrupted");
                 }
             } catch (Exception e) {
-                saveSite(site, StatusEnum.FAILED, e.getLocalizedMessage());
-                LOGGER.error(e);
+                saveSite(site, StatusEnum.FAILED, e.getMessage());
+                LOGGER.error(e.toString());
             } finally {
                 appState.setIndexing(false);
                 appState.notify();
@@ -83,7 +82,7 @@ public class WebPageVisitorStarter implements Runnable {
         }
     }
 
-    private WebPageVisitor initWebPageVisitor(Site site) throws IOException {
+    private WebPageVisitor initWebPageVisitor(Site site) {
         int siteId = site.getId();
         String root = site.getUrl();
 
@@ -102,7 +101,7 @@ public class WebPageVisitorStarter implements Runnable {
                 appState);
     }
 
-    private void saveVisitorData(WebPageVisitor visitor) throws ConcurrentModificationException, IOException {
+    private void saveVisitorData(WebPageVisitor visitor) throws ConcurrentModificationException {
         ForkJoinPool fjp = new ForkJoinPool();
         fjp.invoke(visitor);
         visitor.flushBufferToDb();

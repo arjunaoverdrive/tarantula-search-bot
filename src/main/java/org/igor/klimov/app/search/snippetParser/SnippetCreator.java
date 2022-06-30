@@ -1,7 +1,6 @@
 package org.igor.klimov.app.search.snippetParser;
 
 import org.igor.klimov.app.lemmatizer.LemmaCounter;
-import org.igor.klimov.app.model.Lemma;
 import org.igor.klimov.app.search.WordOnPage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -12,11 +11,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SnippetCreator implements SnippetParser {
-    private final List<Lemma> queryLemmas;
+    private final List<String> queryLemmas;
     private final String html;
     private final LemmaCounter counter;
 
-    public SnippetCreator(List<Lemma> queryLemmas, String html, LemmaCounter counter) {
+    public SnippetCreator(List<String> queryLemmas, String html, LemmaCounter counter) {
 
         this.queryLemmas = queryLemmas;
         this.html = html;
@@ -55,9 +54,12 @@ public class SnippetCreator implements SnippetParser {
         while(matcher.find()){
             WordOnPage wop = new WordOnPage();
 
+            String lemma = counter.getBasicForm(matcher.group().toLowerCase());
+            if(lemma == null) continue;
+            wop.setLemma(lemma);
             wop.setPosition(matcher.start());
             wop.setWord(matcher.group());
-            wop.setLemma(counter.getBasicForm(matcher.group().toLowerCase()));
+
             wordsFromPage.add(wop);
         }
 
@@ -66,10 +68,7 @@ public class SnippetCreator implements SnippetParser {
 
     private Map<String, List<WordOnPage>> getLemmaToWordOnPageMap(){
 
-        List<WordOnPage> wordsOnPage = getWordsOnPageList()
-                .stream()
-                .filter(w -> w.getLemma() != null)
-                .collect(Collectors.toList());
+        List<WordOnPage> wordsOnPage = getWordsOnPageList();
 
         Map<String, List<WordOnPage>> lemmaToWordOnPageMap = new HashMap<>();
 
@@ -100,9 +99,8 @@ public class SnippetCreator implements SnippetParser {
 
         Map<String, List<WordOnPage>> lemmaToWordOnPage =  getLemmaToWordOnPageMap();
 
-        for(Lemma l : queryLemmas){
-            String lemma = l.getLemma();
-            matches.addAll(lemmaToWordOnPage.get(lemma));
+        for(String l : queryLemmas){
+            matches.addAll(lemmaToWordOnPage.get(l));
         }
 
         return matches;
@@ -152,7 +150,7 @@ public class SnippetCreator implements SnippetParser {
     private String getShortSnippet(){
         String formattedText = removeExtraTags();
 
-        Pattern pattern = Pattern.compile("(.*<b>.*</b>.*)");
+        Pattern pattern = Pattern.compile("(.*<b>.*</b>.*)\\p{Punct}?");
         Matcher matcher = pattern.matcher(formattedText);
 
         List<String> res = new ArrayList<>();

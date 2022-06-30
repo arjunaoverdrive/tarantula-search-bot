@@ -36,12 +36,18 @@ public class LemmaHelper {
     }
 
     private void setLemmaCounter(String html) throws IOException {
-        String lang = Jsoup.parse(html)
-                .getElementsByAttribute("lang")
-                .get(0)
-                .attributes()
-                .get("lang");
-        counter =  langToCounter.get(lang);
+        String lang = null;
+        try {
+             lang = Jsoup.parse(html)
+                    .getElementsByAttribute("lang")
+                    .get(0)
+                    .attributes()
+                    .get("lang");
+            counter = langToCounter.get(lang);
+        }catch (IndexOutOfBoundsException iobe){
+            LOGGER.warn(lang);
+            counter = langToCounter.get("en");
+        }
     }
 
     private void populateLangToLemmaCounterMap()  {
@@ -49,7 +55,7 @@ public class LemmaHelper {
             langToCounter.put(Language.RUSSIAN.getLang(), new RussianLemmaCounter());
             langToCounter.put(Language.ENGLISH.getLang(), new EnglishLemmaCounter());
         }catch (IOException ioe){
-            LOGGER.warn(ioe);
+            LOGGER.error(ioe);
         }
     }
 
@@ -58,7 +64,7 @@ public class LemmaHelper {
         try {
             setLemmaCounter(html);
         } catch (IOException ioe){
-            LOGGER.warn(ioe);
+            LOGGER.error(ioe);
         }
         String text = Jsoup.parse(html).select(selector).text();
         return counter.countLemmas(text);
