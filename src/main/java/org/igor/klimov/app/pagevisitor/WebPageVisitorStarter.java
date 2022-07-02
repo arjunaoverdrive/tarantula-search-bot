@@ -1,4 +1,4 @@
-package org.igor.klimov.app.lemmatizer.pagevisitor;
+package org.igor.klimov.app.pagevisitor;
 
 import org.apache.log4j.Logger;
 import org.igor.klimov.app.DAO.LemmaRepository;

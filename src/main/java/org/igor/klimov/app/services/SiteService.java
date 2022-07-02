@@ -11,7 +11,7 @@ import org.igor.klimov.app.indexer.helpers.IndexHelper;
 import org.igor.klimov.app.indexer.helpers.LemmaHelper;
 import org.igor.klimov.app.indexer.helpers.URLsStorage;
 import org.igor.klimov.app.model.*;
-import org.igor.klimov.app.lemmatizer.pagevisitor.WebPageVisitorStarter;
+import org.igor.klimov.app.pagevisitor.WebPageVisitorStarter;
 import org.igor.klimov.app.webapp.DTO.ResultDto;
 import org.jsoup.Connection;
 import org.jsoup.UnsupportedMimeTypeException;
