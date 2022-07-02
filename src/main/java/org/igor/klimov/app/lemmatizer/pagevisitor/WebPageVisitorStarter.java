@@ -1,4 +1,4 @@
-package org.igor.klimov.app.pagevisitor;
+package org.igor.klimov.app.lemmatizer.pagevisitor;
 
 import org.apache.log4j.Logger;
 import org.igor.klimov.app.DAO.LemmaRepository;
@@ -77,7 +77,7 @@ public class WebPageVisitorStarter implements Runnable {
             } finally {
                 appState.setIndexing(false);
                 appState.notify();
-                LOGGER.info("Thread " + Thread.currentThread().getId() + " Took " + (System.currentTimeMillis() - start));
+                LOGGER.info("Thread " + Thread.currentThread().getId() + " Took " + (System.currentTimeMillis() - start) + "ms");
             }
         }
     }

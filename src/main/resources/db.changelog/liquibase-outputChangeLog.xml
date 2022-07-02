@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+    <changeSet author="igor1 (generated)" id="1656622551411-1">
+        <createSequence sequenceName="field_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-2">
+        <createSequence sequenceName="field_id_seq1"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-3">
+        <createSequence sequenceName="field_id_seq2"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-4">
+        <createSequence sequenceName="index_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-5">
+        <createSequence sequenceName="index_id_seq1"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-6">
+        <createSequence sequenceName="index_id_seq2"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-7">
+        <createSequence sequenceName="lemma_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-8">
+        <createSequence sequenceName="lemma_id_seq1"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-9">
+        <createSequence sequenceName="lemma_id_seq2"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-10">
+        <createSequence sequenceName="page_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-11">
+        <createSequence sequenceName="page_id_seq1"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-12">
+        <createSequence sequenceName="page_id_seq2"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-13">
+        <createSequence sequenceName="site_id_seq"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-14">
+        <createSequence sequenceName="site_id_seq1"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-15">
+        <createSequence sequenceName="site_id_seq2"/>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-16">
+        <createTable tableName="field">
+            <column autoIncrement="true" name="id" type="INT">
+                <constraints primaryKey="true" primaryKeyName="field_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="selector" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="weight" type="FLOAT4">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-17">
+        <createTable tableName="index">
+            <column autoIncrement="true" name="id" type="INT">
+                <constraints primaryKey="true" primaryKeyName="index_pkey"/>
+            </column>
+            <column name="lemma_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="page_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rank" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-18">
+        <createTable tableName="lemma">
+            <column autoIncrement="true" name="id" type="INT">
+                <constraints primaryKey="true" primaryKeyName="lemma_pkey"/>
+            </column>
+            <column name="frequency" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lemma" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="site_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-19">
+        <createTable tableName="page">
+            <column autoIncrement="true" name="id" type="INT">
+                <constraints primaryKey="true" primaryKeyName="page_pkey"/>
+            </column>
+            <column name="code" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="path" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="site_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="igor1 (generated)" id="1656622551411-20">
+        <createTable tableName="site">
+            <column autoIncrement="true" name="id" type="INT">
+                <constraints primaryKey="true" primaryKeyName="site_pkey"/>
+            </column>
+            <column name="last_error" type="TEXT"/>
+            <column name="name" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(255)"/>
+            <column name="status_time" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="url" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

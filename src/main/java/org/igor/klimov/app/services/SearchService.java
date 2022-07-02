@@ -56,25 +56,20 @@ public class SearchService {
             return new SearchDto.Error("Nothing is found by the search query: " + query);
         }
 
-        LOGGER.info("Doing search took " + (System.currentTimeMillis() - start));
-
+        LOGGER.info("Doing search took " + (System.currentTimeMillis() - start) + "ms; query: " + query);
         return new SearchDto.Success(resultSize, results);
     }
 
     private List<SearchResultDto> performSearch(String query, int siteId, int limit, int offset) {
 
-        List<FoundPage> foundPages;
-        try {
-            foundPages = getFoundPages(query, siteId, limit, offset);
-        } catch (NullPointerException e) {
-            LOGGER.info(e);
-            return new ArrayList<>();
-        }
+        List<FoundPage> foundPages = getFoundPages(query, siteId, limit, offset);
 
         List<SearchResultDto> results = new ArrayList<>();
+
         for (FoundPage fp : foundPages) {
             int foundPageSiteId = fp.getSiteId();
             Site fromDb = siteRepository.findById(foundPageSiteId).get();
+
             SearchResultDto srd = new SearchResultDto(
                     fromDb.getUrl(),
                     fromDb.getName(),
@@ -97,14 +92,17 @@ public class SearchService {
 
     private List<FoundPage> getFoundPages(String query, int siteId, int limit, int offset) {
         float threshold = props.getFrequencyThreshold();
+
         EnhancedSearchHelper helper = null;
-        List<FoundPage> foundPages = null;
+        List<FoundPage> foundPages = new ArrayList<>();
+
         try {
             helper = new EnhancedSearchHelper(query, siteId, jdbcTemplate, threshold);
             foundPages = helper.getFoundPages(limit, offset);
         } catch (IOException e) {
             LOGGER.error(e);
         }
+
         resultSize = helper.getResultsSize();
 
         return foundPages;

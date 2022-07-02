@@ -30,93 +30,10 @@
     <changeSet author="igor1 (generated)" id="1651927814293-10">
         <createSequence sequenceName="site_id_seq1"/>
     </changeSet>
-    <changeSet author="igor1 (generated)" id="1651927814293-11">
-        <createTable tableName="field">
-            <column autoIncrement="true" name="id" type="INT">
-                <constraints primaryKey="true" primaryKeyName="field_pkey"/>
-            </column>
-            <column name="name" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="selector" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="weight" type="FLOAT4">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet author="igor1 (generated)" id="1651927814293-12">
-        <createTable tableName="index">
-            <column autoIncrement="true" name="id" type="INT">
-                <constraints primaryKey="true" primaryKeyName="index_pkey"/>
-            </column>
-            <column name="lemma_id" type="INT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="page_id" type="INT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="rank" type="FLOAT8">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet author="igor1 (generated)" id="1651927814293-13">
-        <createTable tableName="lemma">
-            <column autoIncrement="true" name="id" type="INT">
-                <constraints primaryKey="true" primaryKeyName="lemma_pkey"/>
-            </column>
-            <column name="frequency" type="INT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="lemma" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="site_id" type="INT">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet author="igor1 (generated)" id="1651927814293-14">
-        <createTable tableName="page">
-            <column autoIncrement="true" name="id" type="INT">
-                <constraints primaryKey="true" primaryKeyName="page_pkey"/>
-            </column>
-            <column name="code" type="INT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="content" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="path" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="site_id" type="INT">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet author="igor1 (generated)" id="1651927814293-15">
-        <createTable tableName="site">
-            <column autoIncrement="true" name="id" type="INT">
-                <constraints primaryKey="true" primaryKeyName="site_pkey"/>
-            </column>
-            <column name="last_error" type="TEXT DEFAULT ''">
-                <constraints nullable="false"/>
-            </column>
-            <column name="name" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="status" type="VARCHAR(255)"/>
-            <column name="status_time" type="TIMESTAMP WITH TIME ZONE">
-                <constraints nullable="false"/>
-            </column>
-            <column name="url" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
+
+
+
+
     <changeSet author="igor1 (generated)" id="1651927814293-16">
         <addUniqueConstraint columnNames="path" constraintName="page_path_key" tableName="page"/>
     </changeSet>

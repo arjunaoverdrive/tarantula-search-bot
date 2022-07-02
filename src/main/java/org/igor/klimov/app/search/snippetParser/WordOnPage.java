@@ -1,4 +1,4 @@
-package org.igor.klimov.app.search;
+package org.igor.klimov.app.search.snippetParser;
 
 public class WordOnPage implements Comparable<WordOnPage>{
 

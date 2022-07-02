@@ -1,4 +1,4 @@
-package org.igor.klimov.app.pagevisitor;
+package org.igor.klimov.app.lemmatizer.pagevisitor;
 
 import org.apache.log4j.Logger;
 import org.igor.klimov.app.DAO.SiteRepository;
@@ -96,7 +96,6 @@ public class WebPageVisitor extends RecursiveAction {
                 lemmaHelper.addLemmasCache(
                         lemmaHelper.calculateWeightForAllLemmasOnPage(page.getContent()));
             }
-
         }
 
         int bufferMaxSize = storage.getBufferMaxSize();
@@ -141,5 +140,4 @@ public class WebPageVisitor extends RecursiveAction {
     void saveLemmas() {
         lemmaHelper.writeLemmasToDb();
     }
-
 }

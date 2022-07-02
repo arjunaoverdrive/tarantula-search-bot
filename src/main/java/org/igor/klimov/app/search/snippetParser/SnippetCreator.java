@@ -1,7 +1,6 @@
 package org.igor.klimov.app.search.snippetParser;
 
 import org.igor.klimov.app.lemmatizer.LemmaCounter;
-import org.igor.klimov.app.search.WordOnPage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 

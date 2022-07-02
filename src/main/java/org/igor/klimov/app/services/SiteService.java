@@ -11,7 +11,7 @@ import org.igor.klimov.app.indexer.helpers.IndexHelper;
 import org.igor.klimov.app.indexer.helpers.LemmaHelper;
 import org.igor.klimov.app.indexer.helpers.URLsStorage;
 import org.igor.klimov.app.model.*;
-import org.igor.klimov.app.pagevisitor.WebPageVisitorStarter;
+import org.igor.klimov.app.lemmatizer.pagevisitor.WebPageVisitorStarter;
 import org.igor.klimov.app.webapp.DTO.ResultDto;
 import org.jsoup.Connection;
 import org.jsoup.UnsupportedMimeTypeException;
@@ -117,10 +117,6 @@ public class SiteService {
                 return new ResultDto.Error("This page is outside of the specified websites");
             }
             try {
-//                if (appState.isIndexing()) {
-//                    return new ResultDto.Error("Выполняется полная индексация. " +
-//                            "Индексация отдельных страниц временно недоступна");
-//                }
                 appState.setIndexing(true);
                 persistPage(site, url);
                 appState.setIndexing(false);
@@ -214,7 +210,7 @@ public class SiteService {
             }
         }
         try {
-            jdbcTemplate.execute("DELETE from index WHERE page_id IN (" + builder.toString() + ")");
+            jdbcTemplate.execute("DELETE from index WHERE page_id IN (" + builder + ")");
         } catch (Exception e) {
             LOGGER.error(e.getLocalizedMessage());
         }

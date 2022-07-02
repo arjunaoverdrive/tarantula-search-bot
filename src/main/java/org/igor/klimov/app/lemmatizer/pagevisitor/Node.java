@@ -1,4 +1,4 @@
-package org.igor.klimov.app.pagevisitor;
+package org.igor.klimov.app.lemmatizer.pagevisitor;
 
 import org.igor.klimov.app.indexer.helpers.URLsStorage;
 import org.apache.log4j.Logger;

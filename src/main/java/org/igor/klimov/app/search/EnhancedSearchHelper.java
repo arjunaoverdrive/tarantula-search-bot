@@ -211,8 +211,6 @@ public class EnhancedSearchHelper implements SearchHelper {
         String sqlToGetPagesContainingLemmas =
                 sqlBuilder.createSqlToGetPagesContainingLemmas(idOfLemmasWithinThreshold, lemmasCount);
 
-        LOGGER.info(sqlToGetPagesContainingLemmas);
-
         List<Integer> pagesWithLemmas = jdbcTemplate.query(sqlToGetPagesContainingLemmas,
                 (ResultSet rs, int rowNum) -> rs.getInt("page_id"));
         setResultsSize(pagesWithLemmas);
