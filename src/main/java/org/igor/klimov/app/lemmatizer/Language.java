@@ -2,15 +2,17 @@ package org.igor.klimov.app.lemmatizer;
 
 public enum Language {
     RUSSIAN("ru"),
-    ENGLISH("en");
+    ENGLISH("en"),
+    RUSSIAN_LOCALE("ru-RU"),
+    ENGLISH_LOCALE("en-US");
 
-    private final String lang;
+    private final String language;
 
-    Language(String lang) {
-        this.lang = lang;
+    Language(String language) {
+        this.language = language;
     }
 
-    public String getLang() {
-        return lang;
+    public String getLanguage() {
+        return language;
     }
 }

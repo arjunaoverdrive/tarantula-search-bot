@@ -1,7 +1,7 @@
 package org.igor.klimov.app.pagevisitor;
 
-import org.igor.klimov.app.indexer.helpers.URLsStorage;
 import org.apache.log4j.Logger;
+import org.igor.klimov.app.indexer.helpers.URLsStorage;
 import org.jsoup.Connection;
 import org.jsoup.UnsupportedMimeTypeException;
 import org.jsoup.nodes.Document;
@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
 public class Node {
     private final String path;
     private final String root;
+    private static final String EXTENSIONS =
+            ".+\\.((doc)?(docx)?(pdf)?(PDF)?(xls)?(xlsx)?(pptx)?(jpg)?(jpeg)?(gif)?(png)?(JPEG)?(GIF)?(PNG)?(JPG)?){1}$";
+    private static final String INVALID_URL = ".+http(s)?.+";
+
 
     private static final Logger LOGGER = Logger.getLogger(Node.class);
 
@@ -52,16 +56,14 @@ public class Node {
     }
 
     private List<String> getPathsListFromDocument(Document doc) {
-        String extention =
-                ".+\\.((doc)?(docx)?(pdf)?(PDF)?(xls)?(xlsx)?(pptx)?(jpg)?(jpeg)?(gif)?(png)?(JPEG)?(GIF)?(PNG)?(JPG)?){1}$";
         return doc.select("a[href]").stream()
                 .map(e -> e.attr("abs:href"))
                 .distinct()
                 .filter(s -> s.matches(  root + "(/)?.+"))
                 .filter(s -> !s.contains("#"))
                 .filter(s -> !s.contains("login"))
-                .filter(s -> !s.matches(extention))
-                .filter(s -> !s.matches(".+http(s)?.+"))
+                .filter(s -> !s.matches(EXTENSIONS))
+                .filter(s -> !s.matches(INVALID_URL))
                 .collect(Collectors.toList());
     }
 

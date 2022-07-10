@@ -7,13 +7,16 @@ import org.igor.klimov.app.DAO.PageRepository;
 import org.igor.klimov.app.DAO.SiteRepository;
 import org.igor.klimov.app.config.AppState;
 import org.igor.klimov.app.config.ConfigProperties;
+import org.igor.klimov.app.indexer.LangToCounter;
 import org.igor.klimov.app.indexer.helpers.IndexHelper;
 import org.igor.klimov.app.indexer.helpers.LemmaHelper;
 import org.igor.klimov.app.indexer.helpers.URLsStorage;
+import org.igor.klimov.app.lemmatizer.LemmaCounter;
 import org.igor.klimov.app.model.*;
 import org.igor.klimov.app.pagevisitor.WebPageVisitorStarter;
 import org.igor.klimov.app.webapp.DTO.ResultDto;
 import org.jsoup.Connection;
+import org.jsoup.Jsoup;
 import org.jsoup.UnsupportedMimeTypeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -264,12 +267,22 @@ public class SiteService {
         Page savedPage = pageRepository.save(page);
         int pageId = savedPage.getId();
 
+
         List<Field> fields = getFields();
-        LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository, fields);
+        LemmaCounter counter = getLemmaCounter(page);
+        LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository, fields, counter);
         Map<String, Float> lemmasFromPageContent = lemmaHelper.calculateWeightForAllLemmasOnPage(page.getContent());
         List<Lemma> savedLemmas = persistLemmas(savedPage, lemmasFromDb, lemmasFromPageContent);
         persistIndices(savedLemmas, lemmasFromPageContent, pageId);
     }
+
+    private LemmaCounter getLemmaCounter(Page page){
+        String lang = Jsoup.parse(page.getContent()).getElementsByAttribute("lang").get(0).attributes().get("lang");
+        LangToCounter langToCounter = new LangToCounter();
+        return langToCounter.getLemmaCounter(lang);
+    }
+
+
 
     private List<Lemma> persistLemmas(Page page, List<Lemma> lemmasFromDb,
                                       Map<String, Float> lemmasFromPageContent) {

@@ -6,12 +6,12 @@ import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class RussianLemmaCounter extends LemmaCounter {
     private final RussianLuceneMorphology luceneMorphology = new RussianLuceneMorphology();
     private static final Logger LOGGER = Logger.getLogger(RussianLemmaCounter.class);
+    private static final String WORD_PATTERN = "[а-я]+\\|\\w\\s[А-Я]+\\s\\D+";
 
 
     public RussianLemmaCounter() throws IOException {
@@ -34,11 +34,11 @@ public class RussianLemmaCounter extends LemmaCounter {
     @Override
     List<String> getListOfNotionalWords(String[] words) {
         return Arrays.stream(words)
-                .map(s -> s.toLowerCase(Locale.ROOT))
+                .map(String::toLowerCase)
                 .map(s -> s.replaceAll("[^а-я]", ""))
                 .filter(s -> !s.isBlank() && !(s.length() == 1))
                 .map(s -> luceneMorphology.getMorphInfo(s).get(0))
-                .filter(s -> s.matches("[а-я]+\\|\\w\\s[А-Я]+\\s\\D+"))
+                .filter(s -> s.matches(WORD_PATTERN))
                 .map(s -> luceneMorphology.getNormalForms(s.substring(0, s.indexOf('|'))).get(0))
                 .filter(luceneMorphology::checkString)
                 .collect(Collectors.toList());

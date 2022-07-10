@@ -6,14 +6,18 @@ import org.igor.klimov.app.DAO.PageRepository;
 import org.igor.klimov.app.DAO.SiteRepository;
 import org.igor.klimov.app.config.AppState;
 import org.igor.klimov.app.config.ConfigProperties;
+import org.igor.klimov.app.indexer.LangToCounter;
 import org.igor.klimov.app.indexer.helpers.IndexHelper;
 import org.igor.klimov.app.indexer.helpers.LemmaHelper;
 import org.igor.klimov.app.indexer.helpers.URLsStorage;
+import org.igor.klimov.app.lemmatizer.LemmaCounter;
 import org.igor.klimov.app.model.Field;
 import org.igor.klimov.app.model.Site;
 import org.igor.klimov.app.model.StatusEnum;
+import org.jsoup.Jsoup;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ConcurrentModificationException;
 import java.util.List;
@@ -22,7 +26,8 @@ import java.util.concurrent.ForkJoinPool;
 public class WebPageVisitorStarter implements Runnable {
 
     private static final Logger LOGGER = Logger.getLogger(WebPageVisitorStarter.class);
-    private final List<Field>fields;
+
+    private final List<Field> fields;
     private final LemmaRepository lemmaRepository;
     private final PageRepository pageRepository;
     private final SiteRepository siteRepository;
@@ -47,6 +52,7 @@ public class WebPageVisitorStarter implements Runnable {
         this.jdbcTemplate = jdbcTemplate;
         this.props = props;
         this.appState = appState;
+
     }
 
     @Override
@@ -73,25 +79,25 @@ public class WebPageVisitorStarter implements Runnable {
                 }
             } catch (Exception e) {
                 saveSite(site, StatusEnum.FAILED, e.getMessage());
-                LOGGER.error(e.toString());
+                LOGGER.error(e);
             } finally {
                 appState.setIndexing(false);
                 appState.notify();
-                LOGGER.info("Thread " + Thread.currentThread().getId() + " Took " + (System.currentTimeMillis() - start) + "ms");
+                LOGGER.info("Thread " + Thread.currentThread().getId() + " Took " + (System.currentTimeMillis() - start) + " ms");
             }
         }
     }
 
-    private WebPageVisitor initWebPageVisitor(Site site) {
+    private WebPageVisitor initWebPageVisitor(Site site) throws IOException {
         int siteId = site.getId();
         String root = site.getUrl();
 
         Node rootNode = new Node(root, root);
         URLsStorage storage = new URLsStorage(root, pageRepository, props);
         IndexHelper indexHelper = new IndexHelper(jdbcTemplate);
-        LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository, fields);
-
-        return new WebPageVisitor(
+        LemmaCounter counter = getLemmaCounter(root);
+        LemmaHelper lemmaHelper = new LemmaHelper(siteId, lemmaRepository, fields, counter);
+        WebPageVisitor visitor  = new WebPageVisitor(
                 siteId,
                 rootNode,
                 siteRepository,
@@ -99,7 +105,24 @@ public class WebPageVisitorStarter implements Runnable {
                 lemmaHelper,
                 indexHelper,
                 appState);
+        return visitor;
     }
+
+    private LemmaCounter getLemmaCounter(String root)  {
+        String lang = null;
+        try {
+            lang = Jsoup.connect(root).execute().parse().getElementsByAttribute("lang").get(0).attributes().get("lang");
+        } catch (IOException e) {
+            LOGGER.error(e);
+        }
+        LangToCounter langToCounter = new LangToCounter();
+        LemmaCounter counter = langToCounter.getLemmaCounter(lang);
+        if (counter == null){
+            throw new RuntimeException("Cannot create lemmaCounter object for this language: " + lang);
+        }
+        return counter;
+    }
+
 
     private void saveVisitorData(WebPageVisitor visitor) throws ConcurrentModificationException {
         ForkJoinPool fjp = new ForkJoinPool();

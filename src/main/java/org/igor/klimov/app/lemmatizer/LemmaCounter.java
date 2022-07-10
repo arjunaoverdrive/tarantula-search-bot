@@ -6,6 +6,7 @@ import java.util.TreeMap;
 
 public abstract class LemmaCounter {
 
+    private static final String PUNCTUATION = "[^A-zА-я_]";
     abstract List<String> getListOfNotionalWords(String[] words);
     public abstract String getBasicForm(String s);
 
@@ -13,7 +14,9 @@ public abstract class LemmaCounter {
 
         Map<String, Integer> lemma2count = new TreeMap<>();
 
-        String[] words = text.replaceAll("\\p{Punct}", " ").split("\\s");
+        String[] words = text
+                .replaceAll(PUNCTUATION, " ")
+                .split("\\s");
 
         List<String> notionalWords = getListOfNotionalWords(words);
 

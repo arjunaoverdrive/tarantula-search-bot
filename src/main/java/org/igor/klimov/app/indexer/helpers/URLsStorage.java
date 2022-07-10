@@ -1,9 +1,9 @@
 package org.igor.klimov.app.indexer.helpers;
 
-import org.igor.klimov.app.DAO.PageRepository;
-import org.igor.klimov.app.model.Page;
-import org.igor.klimov.app.config.ConfigProperties;
 import org.apache.log4j.Logger;
+import org.igor.klimov.app.DAO.PageRepository;
+import org.igor.klimov.app.config.ConfigProperties;
+import org.igor.klimov.app.model.Page;
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -12,10 +12,7 @@ import org.jsoup.UnsupportedMimeTypeException;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class URLsStorage {
     private final String root;
@@ -25,13 +22,13 @@ public class URLsStorage {
     private final PageRepository pageRepository;
 
     private final ConfigProperties props;
+    private static final String REFERRER = "http://www.google.com";
     private final static Logger LOGGER = Logger.getLogger(URLsStorage.class);
-
 
     public URLsStorage(String root, PageRepository pageRepository, ConfigProperties props) {
         this.root = root;
         this.pageRepository = pageRepository;
-        this.buffer = new HashSet<>();
+        this.buffer = Collections.synchronizedSet(new HashSet<>());
         this.children = new HashSet<>();
         this.savedPagesPaths = new HashSet<>();
         this.props = props;
@@ -95,7 +92,6 @@ public class URLsStorage {
         } catch (IOException e) {
             String path = URLDecoder.decode(connection.request().url().getPath(), StandardCharsets.UTF_8);
             page = new Page(path, 500, "", siteId);
-            LOGGER.warn(e + " " + path);
             return page;
         }
         return page;
@@ -124,7 +120,7 @@ public class URLsStorage {
 
     public Connection getConnection(String path) {
         String userAgent = getUserAgent();
-        return Jsoup.connect(path).userAgent(userAgent).referrer("http://www.google.com");
+        return Jsoup.connect(path).userAgent(userAgent).referrer(REFERRER);
     }
 
     @Override

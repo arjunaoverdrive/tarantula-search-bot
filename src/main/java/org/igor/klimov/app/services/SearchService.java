@@ -39,7 +39,7 @@ public class SearchService {
         this.resultSize = 0;
     }
 
-    public SearchDto doSearch(String query, String siteUrl, int offset, int limit) {
+    public SearchDto doSearch(String query, String siteUrl, int offset, int limit) throws IOException {
         long start = System.currentTimeMillis();
         if (appState.isIndexing()) {
             return new SearchDto.Error("Indexing is in progress, search is temporarily unavailable");
@@ -52,20 +52,23 @@ public class SearchService {
         int siteId = siteUrl == null ? -1 : siteRepository.findByUrl(siteUrl).getId();
 
         List<SearchResultDto> results = performSearch(query, siteId, limit, offset);
-        if (results.size() == 0) {
+
+        if (results.isEmpty()) {
             return new SearchDto.Error("Nothing is found by the search query: " + query);
         }
 
-        LOGGER.info("Doing search took " + (System.currentTimeMillis() - start) + "ms; query: " + query);
+        LOGGER.info("Doing search took " + (System.currentTimeMillis() - start) + " ms; query: " + query);
         return new SearchDto.Success(resultSize, results);
     }
 
-    private List<SearchResultDto> performSearch(String query, int siteId, int limit, int offset) {
-
-        List<FoundPage> foundPages = getFoundPages(query, siteId, limit, offset);
+    private List<SearchResultDto> performSearch(String query, int siteId, int limit, int offset) throws IOException {
 
         List<SearchResultDto> results = new ArrayList<>();
+        List<FoundPage> foundPages = getFoundPages(query, siteId, limit, offset);
 
+        if (foundPages.isEmpty()){
+            return results;
+        }
         for (FoundPage fp : foundPages) {
             int foundPageSiteId = fp.getSiteId();
             Site fromDb = siteRepository.findById(foundPageSiteId).get();
@@ -83,24 +86,21 @@ public class SearchService {
         return sortByRelevance(results);
     }
 
-    private List<SearchResultDto> sortByRelevance(List<SearchResultDto> results){
+    private List<SearchResultDto> sortByRelevance(List<SearchResultDto> results) {
         return results.stream()
                 .sorted(Comparator.comparing(SearchResultDto::getRelevance).reversed())
                 .collect(Collectors.toList());
     }
 
 
-    private List<FoundPage> getFoundPages(String query, int siteId, int limit, int offset) {
+    private List<FoundPage> getFoundPages(String query, int siteId, int limit, int offset) throws IOException {
         float threshold = props.getFrequencyThreshold();
 
-        EnhancedSearchHelper helper = null;
-        List<FoundPage> foundPages = new ArrayList<>();
+        EnhancedSearchHelper helper = new EnhancedSearchHelper(query, siteId, jdbcTemplate, threshold);
+        List<FoundPage> foundPages = helper.getFoundPages(limit, offset);
 
-        try {
-            helper = new EnhancedSearchHelper(query, siteId, jdbcTemplate, threshold);
-            foundPages = helper.getFoundPages(limit, offset);
-        } catch (IOException e) {
-            LOGGER.error(e);
+        if(foundPages.isEmpty()){
+            return new ArrayList<>();
         }
 
         resultSize = helper.getResultsSize();

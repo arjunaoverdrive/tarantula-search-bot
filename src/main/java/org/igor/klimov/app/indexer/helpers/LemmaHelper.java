@@ -2,70 +2,62 @@ package org.igor.klimov.app.indexer.helpers;
 
 import org.apache.log4j.Logger;
 import org.igor.klimov.app.DAO.LemmaRepository;
-import org.igor.klimov.app.lemmatizer.EnglishLemmaCounter;
-import org.igor.klimov.app.lemmatizer.Language;
 import org.igor.klimov.app.lemmatizer.LemmaCounter;
-import org.igor.klimov.app.lemmatizer.RussianLemmaCounter;
 import org.igor.klimov.app.model.Field;
 import org.igor.klimov.app.model.Lemma;
 import org.jsoup.Jsoup;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class LemmaHelper {
     private final Map<String, Integer> lemmas; //map to calculate and hold lemmas frequencies
-    private LemmaCounter counter;
+    private final LemmaCounter counter;
     private final Map<String, Integer> lemma2ID;
     private final LemmaRepository lemmaRepository;
     private final List<Field> fields;
     private final int siteId;
 
-    private final Map<String, LemmaCounter> langToCounter = new HashMap<>();
     private static final org.apache.log4j.Logger LOGGER = Logger.getLogger(LemmaHelper.class);
 
-    public LemmaHelper(int siteId, LemmaRepository lemmaRepository, List<Field> fields)  {
+    public LemmaHelper(int siteId, LemmaRepository lemmaRepository, List<Field> fields, LemmaCounter counter) throws IOException {
         this.lemmaRepository = lemmaRepository;
         this.siteId = siteId;
         this.fields = fields;
+        this.counter = counter;
 
-        this.lemma2ID = new TreeMap<>();
-        this.lemmas = new TreeMap<>();
-        populateLangToLemmaCounterMap();
+        this.lemma2ID = new ConcurrentHashMap<>();
+        this.lemmas = new ConcurrentHashMap<>();
+
     }
 
-    private void setLemmaCounter(String html) throws IOException {
-        String lang = null;
-        try {
-             lang = Jsoup.parse(html)
-                    .getElementsByAttribute("lang")
-                    .get(0)
-                    .attributes()
-                    .get("lang");
-            counter = langToCounter.get(lang);
-        }catch (IndexOutOfBoundsException iobe){
-            LOGGER.warn(lang);
-            counter = langToCounter.get("en");
-        }
-    }
-
-    private void populateLangToLemmaCounterMap()  {
-        try {
-            langToCounter.put(Language.RUSSIAN.getLang(), new RussianLemmaCounter());
-            langToCounter.put(Language.ENGLISH.getLang(), new EnglishLemmaCounter());
-        }catch (IOException ioe){
-            LOGGER.error(ioe);
-        }
-    }
+//    private void setLemmaCounter(String html) throws IOException {
+//        String lang = null;
+//        try {
+//             lang = Jsoup.parse(html)
+//                    .getElementsByAttribute("lang")
+//                    .get(0)
+//                    .attributes()
+//                    .get("lang");
+//            counter = langToCounter.get(lang);
+//        }catch (IndexOutOfBoundsException iobe){
+//            LOGGER.warn(lang);
+//            counter = langToCounter.get("en");
+//        }
+//    }
 
 
     private Map<String, Integer> countStringsInPageBlock(String html, String selector) {
-        try {
-            setLemmaCounter(html);
-        } catch (IOException ioe){
-            LOGGER.error(ioe);
-        }
+//        try {
+//            setLemmaCounter(html);
+//        } catch (IOException ioe){
+//            LOGGER.error(ioe);
+//        }
         String text = Jsoup.parse(html).select(selector).text();
         return counter.countLemmas(text);
     }
