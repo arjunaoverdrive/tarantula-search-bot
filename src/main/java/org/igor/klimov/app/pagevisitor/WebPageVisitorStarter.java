@@ -86,7 +86,7 @@ public class WebPageVisitorStarter implements Runnable {
 
     private void invokeWebPageVisitorTask() throws IOException {
         appState.setIndexing(true);
-        LOGGER.info(Thread.currentThread() + "Starting indexing site: " + site.getName());
+        LOGGER.info(Thread.currentThread().getName() + " Starting indexing site: " + site.getName());
         WebPageVisitor visitor = initWebPageVisitor(site);
         saveVisitorData(visitor);
         saveSite(site, StatusEnum.INDEXED, "");

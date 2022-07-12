@@ -17,6 +17,26 @@ public class ConfigProperties {
 
     private float frequencyThreshold;
 
+    private String userName;
+
+    private String userPassword;
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getUserPassword() {
+        return userPassword;
+    }
+
+    public void setUserPassword(String userPassword) {
+        this.userPassword = userPassword;
+    }
+
     public void setSites(Set<Site> sites) {
         this.sites = sites;
     }
@@ -48,6 +68,8 @@ public class ConfigProperties {
     public void setBufferSize(int bufferSize) {
         this.bufferSize = bufferSize;
     }
+
+
 
     public static class Site{
 

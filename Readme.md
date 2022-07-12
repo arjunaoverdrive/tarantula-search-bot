@@ -14,11 +14,12 @@ Local search engine Java Sprong Boot application. Add a few websites to the appl
 It already contains a default value, so you might want to simply modify it. Specify the db user, and the password as well.
 Add a few sites you want to index as the values of the sites parameters. You need to specify both the site name and the url.
 The port, the application will listen to is also configured here.  
-4. Open the src/resources/static/templates/index.html file, locate line 34, and specify your server address following this pattern: protocol://server-address:port/admin
-5. Run mvn clean package. This will create a jar file in the target/ folder
-6. This jar file can either be run from a CLI/terminal or you can create a .bat file to be able to run it by simply clicking it, e.g. like this: java -jar TarantulaSearchBot-1.0-SNAPSHOT.jar  
+4. Besides, TarantulaSearchBot uses basic authentication. Credentials are also specified in the application.yml file. Locate the custom.user-name and custom.user-password parameters and supply the credentials you are going to use.  
+5. Open the src/resources/static/templates/index.html file, locate line 34, and specify your server address following this pattern: protocol://server-address:port/admin
+6. Run mvn clean package. This will create a jar file in the target/ folder
+7. This jar file can either be run from a CLI/terminal or you can create a .bat file to be able to run it by simply clicking it, e.g. like this: java -jar TarantulaSearchBot-1.0-SNAPSHOT.jar  
 
 ***Notes***  
 1. If the application crashed due to lack of RAM while indexing, decrease the buffer-size parameter in the application.yml file. Then, rerun mvn clean package.
-2. By default, lemmas whose frequency value for the given site is higher then 30% are ignored when performing search and calculating page relevance. This can be fine-tuned via the frequency-threshold parameter in the application.yml file. This is a floating number, so it should be specified in the following format: 0.3f.
+2. By default, lemmas whose frequency value for the given site is higher then 50% are ignored when performing search and calculating page relevance. This can be fine-tuned via the frequency-threshold parameter in the application.yml file. This is a floating number, so it should be specified in the following format: 0.3f.
 3. A trial instance of the app can be found at http://tarantula-search-bot.herokuapp.com/admin/. Note that it runs in a free DB container, so please do not start indexing for the whole website as it will lead to overflowing the free database capacity, and the application will return 500 error status due to inability to execute ddl statements, which are blocked when the db capacity is violated.

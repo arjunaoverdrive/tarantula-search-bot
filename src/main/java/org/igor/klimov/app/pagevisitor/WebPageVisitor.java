@@ -47,14 +47,12 @@ public class WebPageVisitor extends RecursiveAction {
     protected void compute() {
         Connection connection = storage.getConnection(node.getPath());
         Set<Node> childrenNodes;
-
         try {
             childrenNodes = node.getChildrenNodes(connection, storage);
         }
         catch (UnsupportedMimeTypeException e) {
             return;
         }
-
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
@@ -62,7 +60,6 @@ public class WebPageVisitor extends RecursiveAction {
         }
 
         List<WebPageVisitor> subActions = new LinkedList<>();
-
         computeChildrenNodes(childrenNodes, subActions);
 
         for (WebPageVisitor action : subActions) {

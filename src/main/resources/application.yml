@@ -32,9 +32,20 @@ server:
 custom:
   user-agent: TarantulaSearchBot (Windows; U; WindowsNT 5.1; en-US; rvl.8.1.6) Gecko/20070725 Firefox/2.0.0.6
   buffer-size: 100
-  frequency-threshold: 0.3f
+  frequency-threshold: 0.5f
+  user-name: admin
+  user-password: 1235789
 
   sites:
     -
       url: https://docs.oracle.com/en/java/javase/14/docs/api/java.base/java
       name: Оракл
+    -
+      url: https://www.postgresql.org/docs/current
+      name: Postgres
+    -
+      url: https://oracleplsql.ru
+      name: Базы данных
+    -
+      url: https://docs.docker.com
+      name: Docker
