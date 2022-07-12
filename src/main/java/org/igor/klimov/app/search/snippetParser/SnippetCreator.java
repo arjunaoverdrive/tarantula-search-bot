@@ -1,7 +1,6 @@
 package org.igor.klimov.app.search.snippetParser;
 
 import org.igor.klimov.app.lemmatizer.LemmaCounter;
-import org.igor.klimov.app.model.Lemma;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -11,7 +10,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SnippetCreator implements SnippetParser {
-    private final List<Lemma> queryLemmas;
+    private final List<String> queryLemmas;
     private final String html;
     private final LemmaCounter counter;
 
@@ -19,7 +18,7 @@ public class SnippetCreator implements SnippetParser {
     private static final Pattern REMOVE_EXTRA_TAGS_PATTERN = Pattern.compile("</b>[\\s\\p{Punct}]?<b>");
     private static final Pattern GET_SHORT_SNIPPET_PATTERN = Pattern.compile("(.*<b>.*</b>.*)\\p{Punct}?");
 
-    public SnippetCreator(List<Lemma> queryLemmas, String html, LemmaCounter counter) {
+    public SnippetCreator(List<String> queryLemmas, String html, LemmaCounter counter) {
         this.queryLemmas = queryLemmas;
         this.html = html;
         this.counter = counter;
@@ -101,9 +100,8 @@ public class SnippetCreator implements SnippetParser {
         List<WordOnPage> matches = new ArrayList<>();
 
         Map<String, List<WordOnPage>> lemmaToWordOnPage = getLemmaToWordOnPageMap();
-
-        for (Lemma l : queryLemmas) {
-            List<WordOnPage> occurrenceList = lemmaToWordOnPage.get(l.getLemma());
+        for (String s : queryLemmas) {
+            List<WordOnPage> occurrenceList = lemmaToWordOnPage.get(s);
             if (occurrenceList != null)
                 matches.addAll(occurrenceList);//???
         }

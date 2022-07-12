@@ -26,7 +26,6 @@ public class EnglishLemmaCounter extends LemmaCounter {
         List<String> filteredStrings = filterStrings(words);
 
         for (String s : filteredStrings) {
-
             try {
                 String morphInfo = englishLuceneMorphology.getMorphInfo(s).get(0);
 

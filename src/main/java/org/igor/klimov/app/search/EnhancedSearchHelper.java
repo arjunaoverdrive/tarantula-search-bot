@@ -75,6 +75,7 @@ public class EnhancedSearchHelper implements SearchHelper {
             foundPages.add(createFoundPage(p, relevance, uniqueLemmas));
         });
 
+
         return foundPages;
     }
 
@@ -100,8 +101,10 @@ public class EnhancedSearchHelper implements SearchHelper {
 
         List<Lemma> lemmasFromQueryLemmas = getLemmasWithinThreshold(queryLemmas);
 
+        List<String> distinctLemmasFromQuery = getDistinctQueryLemmas(lemmasFromQueryLemmas);
+
         SnippetParser snippetParser =
-                new SnippetCreator(lemmasFromQueryLemmas, html, counter);
+                new SnippetCreator(distinctLemmasFromQuery, html, counter);
 
         return snippetParser.create();
     }
@@ -208,7 +211,7 @@ public class EnhancedSearchHelper implements SearchHelper {
 
         Map<Integer, Float> siteToThreshold = getThresholdForSites(siteToPagesCount);
 
-        List<Lemma> lemmasNotExceedingThreshold = new ArrayList();
+        List<Lemma> lemmasNotExceedingThreshold = new ArrayList<>();
 
         for (Lemma l : uniqueLemmas) {
             if (l.getFrequency() < siteToThreshold.get(l.getSiteId())) {

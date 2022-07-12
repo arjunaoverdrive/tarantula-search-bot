@@ -50,7 +50,8 @@ public class WebPageVisitor extends RecursiveAction {
 
         try {
             childrenNodes = node.getChildrenNodes(connection, storage);
-        } catch (UnsupportedMimeTypeException e) {
+        }
+        catch (UnsupportedMimeTypeException e) {
             return;
         }
 
@@ -62,10 +63,17 @@ public class WebPageVisitor extends RecursiveAction {
 
         List<WebPageVisitor> subActions = new LinkedList<>();
 
+        computeChildrenNodes(childrenNodes, subActions);
+
+        for (WebPageVisitor action : subActions) {
+            action.quietlyJoin();
+        }
+    }
+
+    private void computeChildrenNodes(Set<Node>childrenNodes, List<WebPageVisitor>subActions){
         for (Node child : childrenNodes) {
             saveChildPageToStorage(child);
-            WebPageVisitor action = new WebPageVisitor(siteId, child, siteRepository, storage, lemmaHelper,
-                    indexHelper, appState);
+            WebPageVisitor action = createChildVisitor(child);
             action.fork();
             subActions.add(action);
             if (appState.isStopped()) {
@@ -74,9 +82,11 @@ public class WebPageVisitor extends RecursiveAction {
                 break;
             }
         }
-        for (WebPageVisitor action : subActions) {
-            action.quietlyJoin();
-        }
+    }
+
+    private WebPageVisitor createChildVisitor(Node child){
+        return new WebPageVisitor(siteId, child, siteRepository, storage, lemmaHelper,
+                indexHelper, appState);
     }
 
     private void saveChildPageToStorage(Node node) {
@@ -92,7 +102,7 @@ public class WebPageVisitor extends RecursiveAction {
         if (storage.addPageURL(page.getPath())) {
             storage.addPage2Buffer(page);
 
-            if (page.getCode() == 200) {
+            if (page.getCode() == 200 ) {
                 lemmaHelper.addLemmasCache(
                         lemmaHelper.calculateWeightForAllLemmasOnPage(page.getContent()));
             }

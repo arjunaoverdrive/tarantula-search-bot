@@ -68,14 +68,10 @@ public class WebPageVisitorStarter implements Runnable {
             }
             try {
                 if (!appState.isStopped()) {
-                    appState.setIndexing(true);
-                    WebPageVisitor visitor = initWebPageVisitor(site);
-                    saveVisitorData(visitor);
-                    saveSite(site, StatusEnum.INDEXED, "");
+                    invokeWebPageVisitorTask();
                 }
                 if (appState.isStopped()) {
-                    saveSite(site, StatusEnum.FAILED, "Индексация была остановлена");
-                    LOGGER.error("Indexing was interrupted");
+                    throw new RuntimeException("Индексация была остановлена");
                 }
             } catch (Exception e) {
                 saveSite(site, StatusEnum.FAILED, e.getMessage());
@@ -86,6 +82,14 @@ public class WebPageVisitorStarter implements Runnable {
                 LOGGER.info("Thread " + Thread.currentThread().getId() + " Took " + (System.currentTimeMillis() - start) + " ms");
             }
         }
+    }
+
+    private void invokeWebPageVisitorTask() throws IOException {
+        appState.setIndexing(true);
+        LOGGER.info(Thread.currentThread() + "Starting indexing site: " + site.getName());
+        WebPageVisitor visitor = initWebPageVisitor(site);
+        saveVisitorData(visitor);
+        saveSite(site, StatusEnum.INDEXED, "");
     }
 
     private WebPageVisitor initWebPageVisitor(Site site) throws IOException {
@@ -111,7 +115,12 @@ public class WebPageVisitorStarter implements Runnable {
     private LemmaCounter getLemmaCounter(String root)  {
         String lang = null;
         try {
-            lang = Jsoup.connect(root).execute().parse().getElementsByAttribute("lang").get(0).attributes().get("lang");
+            lang = Jsoup.connect(root)
+                    .execute()
+                    .parse()
+                    .getElementsByAttribute("lang")
+                    .get(0)
+                    .attributes().get("lang");
         } catch (IOException e) {
             LOGGER.error(e);
         }
