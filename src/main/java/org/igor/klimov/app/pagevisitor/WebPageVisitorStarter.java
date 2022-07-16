@@ -6,7 +6,7 @@ import org.igor.klimov.app.DAO.PageRepository;
 import org.igor.klimov.app.DAO.SiteRepository;
 import org.igor.klimov.app.config.AppState;
 import org.igor.klimov.app.config.ConfigProperties;
-import org.igor.klimov.app.indexer.LangToCounter;
+import org.igor.klimov.app.lemmatizer.LangToCounter;
 import org.igor.klimov.app.indexer.helpers.IndexHelper;
 import org.igor.klimov.app.indexer.helpers.LemmaHelper;
 import org.igor.klimov.app.indexer.helpers.URLsStorage;
@@ -124,7 +124,7 @@ public class WebPageVisitorStarter implements Runnable {
         } catch (IOException e) {
             LOGGER.error(e);
         }
-        LangToCounter langToCounter = new LangToCounter();
+        LangToCounter langToCounter = LangToCounter.getInstance();
         LemmaCounter counter = langToCounter.getLemmaCounter(lang);
         if (counter == null){
             throw new RuntimeException("Cannot create lemmaCounter object for this language: " + lang);

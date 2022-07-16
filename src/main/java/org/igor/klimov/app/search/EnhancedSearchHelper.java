@@ -1,7 +1,7 @@
 package org.igor.klimov.app.search;
 
 import org.apache.log4j.Logger;
-import org.igor.klimov.app.indexer.LangToCounter;
+import org.igor.klimov.app.lemmatizer.LangToCounter;
 import org.igor.klimov.app.lemmatizer.Language;
 import org.igor.klimov.app.lemmatizer.LemmaCounter;
 import org.igor.klimov.app.model.Lemma;
@@ -41,7 +41,7 @@ public class EnhancedSearchHelper implements SearchHelper {
     }
 
     private LemmaCounter getLemmaCounter() {
-        LangToCounter langToCounter = new LangToCounter();
+        LangToCounter langToCounter = LangToCounter.getInstance();
         Language language = getQueryLanguage();
         return langToCounter.getLemmaCounter(language.getLanguage());
     }
@@ -56,6 +56,7 @@ public class EnhancedSearchHelper implements SearchHelper {
 
     public List<FoundPage> getFoundPages(int limit, int offset) {
 
+        long start = System.currentTimeMillis();
         List<FoundPage> foundPages = new ArrayList<>();
 
         List<Lemma> queryLemmasList = getListOfUniqueLemmas();
@@ -76,45 +77,50 @@ public class EnhancedSearchHelper implements SearchHelper {
         });
 
 
+        LOGGER.info("getFoundPages took " + (System.currentTimeMillis() - start));
         return foundPages;
     }
 
     private FoundPage createFoundPage(Page page, float relevance, List<Lemma> queryLemmas) {
 
+        long start = System.currentTimeMillis();
         int siteId = page.getSiteId();
         String uri = page.getPath();
         String title = getPageTitle(page);
         String snippet = createPageSnippet(page, queryLemmas);
 
-        return new FoundPage(siteId, uri, title, snippet, relevance);
+        FoundPage foundPage = new FoundPage(siteId, uri, title, snippet, relevance);
+        LOGGER.info("createFoundPage took " + (System.currentTimeMillis() - start));
+        return foundPage;
     }
 
 
     private Language getQueryLanguage() {
         Pattern pattern = Pattern.compile("[А-я]+.*");
+
         return pattern.matcher(query).matches() ? Language.RUSSIAN : Language.ENGLISH;
     }
 
     private String createPageSnippet(Page page, List<Lemma> queryLemmas) {
+        long start = System.currentTimeMillis();
 
         String html = page.getContent();
 
-        List<Lemma> lemmasFromQueryLemmas = getLemmasWithinThreshold(queryLemmas);
-
-        List<String> distinctLemmasFromQuery = getDistinctQueryLemmas(lemmasFromQueryLemmas);
+        List<String> distinctLemmasFromQuery = getDistinctQueryLemmas(queryLemmas);
 
         SnippetParser snippetParser =
                 new SnippetCreator(distinctLemmasFromQuery, html, counter);
 
-        return snippetParser.create();
+        String s = snippetParser.create();
+        LOGGER.info("createPageSnippet took " + (System.currentTimeMillis() - start));
+        return s;
     }
 
     private List<String> getDistinctQueryLemmas(List<Lemma> queryLemmas) {
-        List<String> strings = queryLemmas.stream()
+        return queryLemmas.stream()
                 .map(Lemma::getLemma)
                 .distinct()
                 .collect(Collectors.toList());
-        return strings;
     }
 
     private String getPageTitle(Page page) {
@@ -144,7 +150,6 @@ public class EnhancedSearchHelper implements SearchHelper {
 
 
     private Map<Integer, Float> pageToAbsoluteRelevanceMap(int limit, int offset, List<Lemma> uniqueLemmas) {
-
         Map<Integer, Float> pageToAbsoluteRelevance = new HashMap<>();
 
         Map<Integer, Float> pageToRelevance = getPageToRelevanceMap(limit, offset, uniqueLemmas);
@@ -167,17 +172,16 @@ public class EnhancedSearchHelper implements SearchHelper {
 
 
     private Map<Integer, Float> getPageToRelevanceMap(int limit, int offset, List<Lemma> uniqueLemmas) {
-
-        List<Lemma> uniqueLemmasWithinThreshold =
-                getLemmasWithinThreshold(uniqueLemmas);
+        long start = System.currentTimeMillis();
 
         List<Integer> idsOfUniqueLemmasWithinThreshold =
-                getIdsOfLemmasWithinThreshold(uniqueLemmasWithinThreshold);
+                getIdsOfLemmasWithinThreshold(uniqueLemmas);
 
-        int lemmasCount = getDistinctQueryLemmas(uniqueLemmasWithinThreshold).size();
         Map<Integer, Float> pageToRelevance = new HashMap<>();
 
-        List<Integer> pageIds = getIdsForPagesContainingAllLemmas(uniqueLemmasWithinThreshold, lemmasCount);
+        Map<Integer, List<Integer>> siteIdsToListOfUniqueLemmasMap = getSiteToUniqueLemmasIdsMap(uniqueLemmas);
+
+        List<Integer> pageIds = getIdsForPagesContainingAllLemmas(siteIdsToListOfUniqueLemmasMap);
 
         String sqlToGetPageToRelevanceMap =
                 sqlBuilder.createSqlToGetPageToRelevanceMap(idsOfUniqueLemmasWithinThreshold, pageIds, limit, offset);
@@ -186,27 +190,44 @@ public class EnhancedSearchHelper implements SearchHelper {
                 pageToRelevance.put(rs.getInt("page_id"), rs.getFloat("relevance"))
         );
 
+        LOGGER.info("getPageToRelevanceMap took " + (System.currentTimeMillis() - start));
         return pageToRelevance;
     }
 
+    private Map<Integer, List<Integer>> getSiteToUniqueLemmasIdsMap(List<Lemma>uniqueLemmas){
+        Map<Integer, List<Integer>> siteIdToListOfUniqueLemmas = new HashMap<>();
 
-    private List<Integer> getIdsForPagesContainingAllLemmas(List<Lemma> uniqueLemmas, int lemmasCount) {
+        for(Lemma l : uniqueLemmas){
+            int siteId = l.getSiteId();
+            if(siteIdToListOfUniqueLemmas.get(siteId) == null){
+                siteIdToListOfUniqueLemmas.put(siteId, List.of(l.getId()));
+            } else {
+                List<Integer> values = siteIdToListOfUniqueLemmas.get(siteId);
+                List<Integer> list = new ArrayList<>(values);
+                list.add(l.getId());
+                siteIdToListOfUniqueLemmas.put(siteId, list);
+            }
+        }
 
-        List<Integer> idsOfLemmasWithinThreshold = getIdsOfLemmasWithinThreshold(uniqueLemmas);
+        return siteIdToListOfUniqueLemmas;
+    }
 
-        String sqlToGetPagesContainingLemmas =
-                sqlBuilder.createSqlToGetPagesContainingLemmas(idsOfLemmasWithinThreshold, lemmasCount);
+
+    private List<Integer> getIdsForPagesContainingAllLemmas(Map<Integer, List<Integer>> siteIdToUniqueLemmas) {
+        long start = System.currentTimeMillis();
+        String sqlToGetPagesContainingLemmas = sqlBuilder.createSqlToGetPagesContainingLemmas(siteIdToUniqueLemmas);
 
         List<Integer> pagesWithLemmas = jdbcTemplate.query(sqlToGetPagesContainingLemmas,
                 (ResultSet rs, int rowNum) -> rs.getInt("page_id"));
+
         setResultsSize(pagesWithLemmas);
 
+        LOGGER.info("\tgetIdsForPagesContainingAllLemmas took " + (System.currentTimeMillis() - start));
         return pagesWithLemmas;
     }
 
 
     private List<Lemma> getLemmasWithinThreshold(List<Lemma> uniqueLemmas) {
-
         Map<Integer, Integer> siteToPagesCount = getPagesCountForSites();
 
         Map<Integer, Float> siteToThreshold = getThresholdForSites(siteToPagesCount);
@@ -223,11 +244,13 @@ public class EnhancedSearchHelper implements SearchHelper {
     }
 
     private List<Integer> getIdsOfLemmasWithinThreshold(List<Lemma> lemmas) {
-        return lemmas.stream().map(Lemma::getId).collect(Collectors.toList());
+
+        return lemmas.stream()
+                .map(Lemma::getId)
+                .collect(Collectors.toList());
     }
 
     private List<Lemma> getListOfUniqueLemmas() {
-
         List<Lemma> uniqueLemmas = null;
         Set<String> queryLemmas = getQueryLemmasSet();
 
@@ -255,7 +278,6 @@ public class EnhancedSearchHelper implements SearchHelper {
 
 
     private Map<Integer, Integer> getPagesCountForSites() {
-
         Map<Integer, Integer> siteToPagesCount = new HashMap<>();
 
         String sqlToGetSiteToPagesCount = sqlBuilder.createSqlToGetPageCountForSites(siteId);

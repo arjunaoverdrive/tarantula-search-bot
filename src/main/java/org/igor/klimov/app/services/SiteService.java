@@ -7,7 +7,7 @@ import org.igor.klimov.app.DAO.PageRepository;
 import org.igor.klimov.app.DAO.SiteRepository;
 import org.igor.klimov.app.config.AppState;
 import org.igor.klimov.app.config.ConfigProperties;
-import org.igor.klimov.app.indexer.LangToCounter;
+import org.igor.klimov.app.lemmatizer.LangToCounter;
 import org.igor.klimov.app.indexer.helpers.IndexHelper;
 import org.igor.klimov.app.indexer.helpers.LemmaHelper;
 import org.igor.klimov.app.indexer.helpers.URLsStorage;
@@ -278,7 +278,7 @@ public class SiteService {
 
     private LemmaCounter getLemmaCounter(Page page){
         String lang = Jsoup.parse(page.getContent()).getElementsByAttribute("lang").get(0).attributes().get("lang");
-        LangToCounter langToCounter = new LangToCounter();
+        LangToCounter langToCounter = LangToCounter.getInstance();
         return langToCounter.getLemmaCounter(lang);
     }
 

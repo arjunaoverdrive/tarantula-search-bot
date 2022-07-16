@@ -32,7 +32,7 @@ server:
 custom:
   user-agent: TarantulaSearchBot (Windows; U; WindowsNT 5.1; en-US; rvl.8.1.6) Gecko/20070725 Firefox/2.0.0.6
   buffer-size: 100
-  frequency-threshold: 0.5f
+  frequency-threshold: 0.35f
   user-name: admin
   user-password: 1235789
 

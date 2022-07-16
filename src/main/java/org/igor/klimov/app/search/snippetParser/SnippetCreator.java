@@ -80,13 +80,10 @@ public class SnippetCreator implements SnippetParser {
 
             if (lemmaToWordOnPageMap.get(l) == null) {
                 List<WordOnPage> lemmaOccurrences = List.of(w);
-
                 lemmaToWordOnPageMap.put(l, lemmaOccurrences);
             } else {
                 List<WordOnPage> values = lemmaToWordOnPageMap.get(l);
-
                 ArrayList<WordOnPage> list = new ArrayList<>(values);
-
                 list.add(w);
                 lemmaToWordOnPageMap.put(l, list);
             }

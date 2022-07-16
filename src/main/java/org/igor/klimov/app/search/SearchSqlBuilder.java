@@ -3,6 +3,7 @@ package org.igor.klimov.app.search;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -44,23 +45,6 @@ public class SearchSqlBuilder {
         return builder.toString();
     }
 
-    String createSqlToGetPagesContainingLemmas(List<Integer> lemmas, int lemmasCount) {
-
-//        int lemmasSize = lemmas.stream().map(l -> l);
-
-        StringBuilder builder = new StringBuilder(
-                "SELECT page_id FROM" +
-                "(SELECT i.page_id, COUNT(*) as count FROM index i WHERE i.lemma_id IN( ");
-        for (int lemmaId : lemmas) {
-            builder.append(lemmaId);
-            builder.append(", ");
-        }
-
-        builder.delete(builder.lastIndexOf(", "), builder.length());
-        builder.append(") GROUP BY i.page_id ORDER BY count DESC) AS page2count WHERE count = " + lemmasCount);
-
-        return builder.toString();
-    }
 
     public String createSqlToGetPageToRelevanceMap(List<Integer> lemmaIds, List<Integer> pageIds, int limit, int offset) {
 
@@ -89,6 +73,24 @@ public class SearchSqlBuilder {
         pageIds.forEach(i -> builder.append(i).append(", "));
         builder.delete(builder.lastIndexOf(","), builder.length());
         builder.append(")");
+
+        return builder.toString();
+    }
+
+    public String createSqlToGetPagesContainingLemmas(Map<Integer, List<Integer>> siteIdToUniqueLemmas) {
+
+        StringBuilder builder = new StringBuilder();
+        for(Map.Entry<Integer, List<Integer>> e : siteIdToUniqueLemmas.entrySet()){
+            builder.append("SELECT page_id FROM(");
+            builder.append("SELECT i.page_id, COUNT(*) as count FROM index i WHERE i.lemma_id IN(");
+            e.getValue().forEach(i -> builder.append(i).append(", "));
+
+            builder.delete(builder.lastIndexOf(","), builder.length());
+            builder.append(") GROUP BY i.page_id ORDER BY count DESC) AS page2count WHERE count = ")
+                    .append(e.getValue().size());
+            builder.append(" UNION ");
+        }
+        builder.delete(builder.lastIndexOf("UNION"), builder.length());
 
         return builder.toString();
     }
