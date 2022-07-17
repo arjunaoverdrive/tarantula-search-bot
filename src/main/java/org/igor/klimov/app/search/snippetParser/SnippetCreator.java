@@ -1,5 +1,6 @@
 package org.igor.klimov.app.search.snippetParser;
 
+import org.apache.log4j.Logger;
 import org.igor.klimov.app.lemmatizer.LemmaCounter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -16,7 +17,9 @@ public class SnippetCreator implements SnippetParser {
 
     private static final Pattern WORD_ON_PAGE_PATTERN = Pattern.compile("\\b[А-яA-z]+\\b");
     private static final Pattern REMOVE_EXTRA_TAGS_PATTERN = Pattern.compile("</b>[\\s\\p{Punct}]?<b>");
-    private static final Pattern GET_SHORT_SNIPPET_PATTERN = Pattern.compile("(.*<b>.*</b>.*)\\p{Punct}?");
+    private static final Pattern GET_SHORT_SNIPPET_PATTERN = Pattern.compile("(\\s.{0,25}<b>.{0,150}</b>).{0,25}\\s");
+
+    private static final Logger LOGGER = Logger.getLogger(SnippetCreator.class);
 
     public SnippetCreator(List<String> queryLemmas, String html, LemmaCounter counter) {
         this.queryLemmas = queryLemmas;
@@ -30,7 +33,6 @@ public class SnippetCreator implements SnippetParser {
     }
 
     private String clearContentFromExtraElements() {
-
         Document document = Jsoup.parse(html, "UTF-8");
 
         document.getElementsByTag("header").remove();
@@ -43,7 +45,6 @@ public class SnippetCreator implements SnippetParser {
 
 
     private List<WordOnPage> getWordsOnPageList() {
-
         String text = clearContentFromExtraElements();
 
         Matcher matcher = WORD_ON_PAGE_PATTERN.matcher(text);
@@ -51,26 +52,26 @@ public class SnippetCreator implements SnippetParser {
         List<WordOnPage> wordsFromPage = new ArrayList<>();
 
         while (matcher.find()) {
-            String match = matcher.group().toLowerCase();
+            String word = matcher.group().toLowerCase();
             WordOnPage wop = new WordOnPage();
 
-            String lemma = counter.getBasicForm(match);
+            String lemma = counter.getBasicForm(word);
             if (lemma == null) {
                 continue;
             }
 
-            wop.setLemma(lemma);
-            wop.setPosition(matcher.start());
-            wop.setWord(matcher.group());
-
-            wordsFromPage.add(wop);
+            if(queryLemmas.contains(lemma)) {
+                wop.setLemma(lemma);
+                wop.setPosition(matcher.start());
+                wop.setWord(matcher.group());
+                wordsFromPage.add(wop);
+            }
         }
 
         return wordsFromPage;
     }
 
     private Map<String, List<WordOnPage>> getLemmaToWordOnPageMap() {
-
         List<WordOnPage> wordsOnPage = getWordsOnPageList();
 
         Map<String, List<WordOnPage>> lemmaToWordOnPageMap = new TreeMap<>();
@@ -92,25 +93,12 @@ public class SnippetCreator implements SnippetParser {
         return lemmaToWordOnPageMap;
     }
 
-    private List<WordOnPage> findQueryWordsInListOfWordsOnPage() {
-
-        List<WordOnPage> matches = new ArrayList<>();
-
-        Map<String, List<WordOnPage>> lemmaToWordOnPage = getLemmaToWordOnPageMap();
-        for (String s : queryLemmas) {
-            List<WordOnPage> occurrenceList = lemmaToWordOnPage.get(s);
-            if (occurrenceList != null)
-                matches.addAll(occurrenceList);//???
-        }
-
-        return matches;
-    }
 
     private List<WordOnPage> sortWordsOnPage() {
+        List<WordOnPage> wordsOnPage = new ArrayList<>();
+        getLemmaToWordOnPageMap().values().forEach(wordsOnPage::addAll);
 
-        List<WordOnPage> queryWordsInListOfWordsOnPage = findQueryWordsInListOfWordsOnPage();
-
-        return queryWordsInListOfWordsOnPage
+        return wordsOnPage
                 .stream()
                 .sorted(Comparator.comparing(WordOnPage::getPosition).reversed())
                 .collect(Collectors.toList());
@@ -155,7 +143,11 @@ public class SnippetCreator implements SnippetParser {
         while (matcher.find()) {
             res.add(matcher.group());
         }
-        return res.get(0);
+
+        return res
+                .stream()
+                .sorted(Comparator.comparing(String::length).reversed())
+                        .collect(Collectors.toList()).get(0);
 
     }
 
