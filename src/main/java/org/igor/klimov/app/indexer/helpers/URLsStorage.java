@@ -8,6 +8,7 @@ import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.UnsupportedMimeTypeException;
+import org.jsoup.nodes.Document;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -80,7 +81,7 @@ public class URLsStorage {
             int statusCode = response.statusCode();
             String path = URLDecoder.decode(response.url().getPath(), StandardCharsets.UTF_8);
             String uri = isDomainEqualRoot() ? getUriWOSubdomain(path) : path;
-            String content = response.body();
+            String content = clearContentFromExtraElements(response.body());
             page = new Page(uri, statusCode, content, siteId);
         } catch (HttpStatusException hse) {
             String url = connection.request().url().getPath();
@@ -95,6 +96,16 @@ public class URLsStorage {
             return page;
         }
         return page;
+    }
+
+    private String clearContentFromExtraElements(String html) {
+        Document document = Jsoup.parse(html, "UTF-8");
+
+        document.getElementsByTag("header").remove();
+        document.getElementsByTag("script").remove();
+        document.getElementsByTag("noscript").remove();
+        document.getElementsByTag("footer").remove();
+        return document.html();
     }
 
     private boolean isDomainEqualRoot(){

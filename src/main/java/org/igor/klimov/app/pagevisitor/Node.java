@@ -61,6 +61,7 @@ public class Node {
                 .distinct()
                 .filter(s -> s.matches(  root + "(/)?.+"))
                 .filter(s -> !s.contains("#"))
+                .filter(s -> !s.contains("?"))
                 .filter(s -> !s.contains("login"))
                 .filter(s -> !s.matches(EXTENSIONS))
                 .filter(s -> !s.matches(INVALID_URL))

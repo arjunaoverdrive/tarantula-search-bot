@@ -2262,7 +2262,7 @@ button.link {
 }
 .Site-loadingIsComplete {
   visibility: hidden;
-  overflow: hidden;
+  overflow: hidden;   /*remove this in min.css*/
 }
 .Site-loader {
   position: absolute;

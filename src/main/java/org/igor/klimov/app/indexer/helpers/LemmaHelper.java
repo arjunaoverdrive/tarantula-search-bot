@@ -36,28 +36,7 @@ public class LemmaHelper {
 
     }
 
-//    private void setLemmaCounter(String html) throws IOException {
-//        String lang = null;
-//        try {
-//             lang = Jsoup.parse(html)
-//                    .getElementsByAttribute("lang")
-//                    .get(0)
-//                    .attributes()
-//                    .get("lang");
-//            counter = langToCounter.get(lang);
-//        }catch (IndexOutOfBoundsException iobe){
-//            LOGGER.warn(lang);
-//            counter = langToCounter.get("en");
-//        }
-//    }
-
-
     private Map<String, Integer> countStringsInPageBlock(String html, String selector) {
-//        try {
-//            setLemmaCounter(html);
-//        } catch (IOException ioe){
-//            LOGGER.error(ioe);
-//        }
         String text = Jsoup.parse(html).select(selector).text();
         return counter.countLemmas(text);
     }
@@ -89,7 +68,7 @@ public class LemmaHelper {
 
     public Map<String, Float> calculateWeightForAllLemmasOnPage(String html) {
         Map<String, Float> selector2weight = getSelector2weight();
-        Map<String, Float> res = new HashMap();
+        Map<String, Float> res = new HashMap<>();
         for (Map.Entry<String, Float> e : selector2weight.entrySet()) {
             Map<String, Float> weight4LemmasInOneBlock =
                     getWeight4LemmasInOneBlock(e.getKey(), html, e.getValue());
