@@ -21,7 +21,7 @@ public class ExceptionController {
     @ExceptionHandler({IllegalArgumentException.class, MissingServletRequestParameterException.class})
     public ResponseEntity handleError400(Exception e){
         String message = e instanceof MissingServletRequestParameterException ?
-                "Отсутствует обязательный параметр в запросе " + ((MissingServletRequestParameterException) e).getParameterName()
+                "Request parameter is missing " + ((MissingServletRequestParameterException) e).getParameterName()
                 : e.getLocalizedMessage();
         ExceptionDto error = new ExceptionDto(message);
         LOGGER.warn(error.getError());
@@ -30,14 +30,14 @@ public class ExceptionController {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity handleError401(AuthenticationException e) {
-        ExceptionDto error = new ExceptionDto("Неудачная аутентификация");
+        ExceptionDto error = new ExceptionDto("Authentication failed");
         LOGGER.warn(error.getError());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     @ExceptionHandler(IOException.class)
     public ResponseEntity handleError403(IOException e){
-        ExceptionDto error = new ExceptionDto(e.getLocalizedMessage());
+        ExceptionDto error = new ExceptionDto(e.getMessage());
         LOGGER.warn(error.getError());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
@@ -52,7 +52,7 @@ public class ExceptionController {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity handleError405(HttpServletRequest request) {
         String method = request.getMethod();
-        ExceptionDto error = new ExceptionDto("Метод " + method + " не разрешён");
+        ExceptionDto error = new ExceptionDto("Method " + method + " is not allowed");
         LOGGER.warn(error.getError());
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
