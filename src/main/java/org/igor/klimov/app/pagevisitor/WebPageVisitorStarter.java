@@ -71,7 +71,7 @@ public class WebPageVisitorStarter implements Runnable {
                     invokeWebPageVisitorTask();
                 }
                 if (appState.isStopped()) {
-                    throw new RuntimeException("Индексация была остановлена");
+                    throw new RuntimeException("Indexing was stopped");
                 }
             } catch (Exception e) {
                 saveSite(site, StatusEnum.FAILED, e.getMessage());

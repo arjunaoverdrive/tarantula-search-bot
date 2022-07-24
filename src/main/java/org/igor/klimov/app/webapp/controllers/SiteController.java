@@ -1,5 +1,7 @@
 package org.igor.klimov.app.webapp.controllers;
 
+import org.igor.klimov.app.services.IndexOnePageService;
+import org.igor.klimov.app.services.IndexOneSiteService;
 import org.igor.klimov.app.services.SiteService;
 import org.igor.klimov.app.webapp.DTO.ResultDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +15,13 @@ public class SiteController {
 
     @Autowired
     private final SiteService siteService;
+    private final IndexOneSiteService oneSiteService;
+    private final IndexOnePageService onePageService;
 
-    public SiteController(SiteService siteService) {
+    public SiteController(SiteService siteService, IndexOneSiteService oneSiteService, IndexOnePageService onePageService) {
         this.siteService = siteService;
+        this.oneSiteService = oneSiteService;
+        this.onePageService = onePageService;
     }
 
     @GetMapping(value = "/api/startIndexing")
@@ -32,7 +38,13 @@ public class SiteController {
 
     @PostMapping(value = "/api/indexPage")
     public ResponseEntity indexPage(@RequestParam(name = "url") String url) throws Exception {
-        ResultDto result = siteService.indexPage(url);
+        ResultDto result = onePageService.indexPage(url);
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+    @PostMapping(value = "/api/indexSite")
+    public ResponseEntity indexSite(@RequestParam(name= "url") String url) {
+        ResultDto result = oneSiteService.indexSite(url);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 }
