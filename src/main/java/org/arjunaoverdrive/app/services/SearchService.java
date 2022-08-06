@@ -19,15 +19,12 @@ import java.util.stream.Collectors;
 
 @Service
 public class SearchService {
-
     private final SiteRepository siteRepository;
     private final JdbcTemplate jdbcTemplate;
     private final AppState appState;
     private final ConfigProperties props;
     private static final Logger LOGGER = Logger.getLogger(SearchService.class);
     private int resultSize;
-    private final Map<Integer, Site> idToSite;
-
 
     @Autowired
     public SearchService(SiteRepository siteRepository, JdbcTemplate jdbcTemplate, AppState appState, ConfigProperties props) {
@@ -36,16 +33,6 @@ public class SearchService {
         this.appState = appState;
         this.props = props;
         this.resultSize = 0;
-        this.idToSite = idToSite();
-    }
-
-    private Map<Integer, Site> idToSite() {
-        List<Site> sites = siteRepository.findAll();
-        Map<Integer, Site>idToSite = new HashMap<>();
-        for(Site site : sites){
-            idToSite.put(site.getId(), site);
-        }
-        return idToSite;
     }
 
     public SearchDto doSearch(String query, String siteUrl, int offset, int limit) throws IOException {
@@ -58,7 +45,8 @@ public class SearchService {
             throw new IllegalArgumentException("The search query is empty");
         }
 
-        int siteId = siteUrl == null ? -1 : siteRepository.findByUrl(siteUrl).getId();
+        int siteId = siteUrl == null || siteUrl.isEmpty()
+                ? -1 : siteRepository.findByUrl(siteUrl).getId();
         List<SearchResultDto> results = performSearch(query, siteId, limit, offset);
         if (results.isEmpty()) {
             return new SearchDto.Error("Nothing is found by the search query: " + query);
@@ -82,15 +70,16 @@ public class SearchService {
     private void populateResultsWithFoundPages(List<SearchResultDto> results, List<FoundPage> foundPages) {
         for (FoundPage fp : foundPages) {
             int foundPageSiteId = fp.getSiteId();
-            Site fromDb = idToSite.get(foundPageSiteId);
-            results.add(new SearchResultDto(
+            Site fromDb = siteRepository.findById(foundPageSiteId).get();
+
+            SearchResultDto srd = new SearchResultDto(
                     fromDb.getUrl(),
                     fromDb.getName(),
                     fp.getUri(),
                     fp.getTitle(),
                     fp.getSnippet(),
-                    fp.getRelevance())
-            );
+                    fp.getRelevance());
+            results.add(srd);
         }
     }
 

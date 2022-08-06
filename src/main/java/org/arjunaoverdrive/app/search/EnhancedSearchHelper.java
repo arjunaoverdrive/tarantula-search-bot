@@ -28,7 +28,6 @@ public class EnhancedSearchHelper implements SearchHelper {
 
     private final Logger LOGGER = Logger.getLogger(EnhancedSearchHelper.class);
 
-
     public EnhancedSearchHelper(String query, int siteId, JdbcTemplate jdbcTemplate, float threshold) throws IOException {
         this.query = query;
         this.siteId = siteId;
@@ -236,11 +235,9 @@ public class EnhancedSearchHelper implements SearchHelper {
         return uniqueLemmas;
     }
 
-
     private Set<String> getQueryLemmasSet() {
         return counter.countLemmas(query).keySet();
     }
-
 
     private Map<Integer, Integer> getPagesCountForSites() {
         Map<Integer, Integer> siteToPagesCount = new HashMap<>();
@@ -250,7 +247,6 @@ public class EnhancedSearchHelper implements SearchHelper {
                 siteToPagesCount.put(rs.getInt("site_id"), rs.getInt("page_count")));
         return siteToPagesCount;
     }
-
 
     private Map<Integer, Float> getThresholdForSites(Map<Integer, Integer> siteToPagesCount) {
         Map<Integer, Float> siteToThreshold = new HashMap<>();

@@ -10,6 +10,6 @@ import java.util.List;
 public interface PageRepository extends JpaRepository<Page, Integer> {
     int countBySiteId(int id);
     List<Page>findBySiteId(int siteId);
-
     Page findByPath(String path);
+    List<Page>findByCodeNot(int code);
 }

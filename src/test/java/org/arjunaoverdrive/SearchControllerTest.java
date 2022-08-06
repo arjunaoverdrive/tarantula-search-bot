@@ -49,7 +49,7 @@ public class SearchControllerTest {
     public void testSearch() throws Exception {
         this.mockMvc.perform(get("/api/startIndexing"))
                 .andDo(print());
-        Thread.sleep(7000);
+        Thread.sleep(10000);
         MvcResult mvcResult = this.mockMvc.perform(get("/api/search?query=Россия&offset=0&limit=10"))
                 .andDo(print())
                 .andExpect(status().isOk())

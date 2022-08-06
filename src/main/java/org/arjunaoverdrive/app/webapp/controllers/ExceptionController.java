@@ -57,10 +57,10 @@ public class ExceptionController {
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity handleError500(Exception e){
-        ExceptionDto error = new ExceptionDto(e.getLocalizedMessage());
-        LOGGER.warn(error.getError());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-    }
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity handleError500(Exception e){
+//        ExceptionDto error = new ExceptionDto(e.getLocalizedMessage());
+//        LOGGER.warn(error.getError());
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+//    }
 }
