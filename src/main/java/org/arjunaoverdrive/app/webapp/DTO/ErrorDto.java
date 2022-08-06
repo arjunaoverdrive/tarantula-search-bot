@@ -18,28 +18,28 @@ public class ErrorDto {
     }
 
     public static class ErrorPage{
-        private String uri;
-        private String site;
+        private String url;
+        private Integer code;
 
-        public ErrorPage(String uri, String name) {
-            this.uri = uri;
-            this.site = name;
+        public ErrorPage(String url, Integer code) {
+            this.url = url;
+            this.code = code;
         }
 
-        public String getUri() {
-            return uri;
+        public String getUrl() {
+            return url;
         }
 
-        public void setUri(String uri) {
-            this.uri = uri;
+        public void setUrl(String url) {
+            this.url = url;
         }
 
-        public String getSite() {
-            return site;
+        public Integer getCode() {
+            return code;
         }
 
-        public void setSite(String site) {
-            this.site = site;
+        public void setCode(Integer code) {
+            this.code = code;
         }
     }
 }

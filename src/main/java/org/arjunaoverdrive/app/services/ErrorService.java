@@ -25,13 +25,19 @@ public class ErrorService {
     }
 
     public ErrorDto getErrorDto(){
-        return new ErrorDto(listErrors());
+        List<ErrorDto.ErrorPage> errorPages = listErrors();
+        return new ErrorDto(errorPages);
     }
     private List<ErrorDto.ErrorPage> listErrors() {
+        Map<Integer, String> idToUrl = getIdToSiteUrl();
         List<Page> errorPages = pageRepository.findByCodeNot(200);
         List<ErrorDto.ErrorPage> errors = new ArrayList<>();
-        Map<Integer, String> idToUrl = getIdToSiteUrl();
-        errorPages.stream().map(p -> errors.add(new ErrorDto.ErrorPage(p.getPath(), idToUrl.get(p.getId()))));
+        errorPages
+                .forEach(p -> errors.add(
+                        new ErrorDto.ErrorPage(
+                                idToUrl.get(p.getSiteId()) + p.getPath(),
+                                p.getCode())
+                ));
         return errors;
     }
 
